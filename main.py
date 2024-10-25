@@ -10,6 +10,7 @@ from pybricks.robotics   import DriveBase
 
 from pybricks.media.ev3dev import Font#, SoundFile, ImageFile
 
+from math import ceil
 import cores
 
 # This program requires LEGO EV3 MicroPython v2.0 or higher.
@@ -24,36 +25,39 @@ botao_anterior = Button.LEFT
 botao_proximo  = Button.RIGHT
 botao_começar  = Button.UP
 
-ev3.screen.set_font(Font('Lucida', size=11, monospace=True))
+tam_fonte = 15
+ev3.screen.set_font(Font('Lucida', size=tam_fonte, monospace=True))
 
 # Write your program here.
 ev3.speaker.beep(frequency=500, duration=100)
 
-def tela(seleção, clear=True, redraw=True,
-                  pad=10, text_height=11,
-                  text_width=ev3.screen.width//2):
-    if clear:
-        ev3.screen.clear()
+#TODO: passar +1/-1 em vez do número da seleção, ou fazer a lógica de botão aqui direto
+def tela_calibração(hub, seleção, force_clear=False, pad=5,
+                                  text_height=tam_fonte+4,
+                                  text_width=ev3.screen.width//2):
+    if force_clear: hub.screen.clear()
+
+    cor_normal      = (Color.BLACK, Color.WHITE)
+    cor_selecionado = (Color.WHITE, Color.BLACK)
 
     start_x = start_y = pad
     for i, texto in enumerate(cores.cor):
-        x = start_x if i < len(cores.cor) else start_x + text_width
-        y = (start_y + text_height*i) % ev3.screen.height
+        selecionado = (i == seleção)
 
-        selecionado = i == seleção
+        front, back = cor_selecionado if selecionado else cor_normal
 
-        front, back = ((Color.WHITE, Color.BLACK) if selecionado else 
-                       (Color.BLACK, Color.WHITE))
-        ev3.screen.draw_text(x,y, texto, text_color=front,
+        qtd_lin     = len(cores.cor)
+        qtd_lin_col = ceil(qtd_lin/2)
+
+        x = start_x + text_width *(i >= qtd_lin_col)
+        y = start_y + text_height*(i %  qtd_lin_col)
+
+        hub.screen.draw_text(x,y, texto, text_color=front,
                                          background_color=back)
 
-frame = 0
-seleção = 0
+frame, seleção = 0, 0
 while True:
-    if frame % 10 == 0:
-        tela(seleção, clear=True)
-    else:
-        tela(seleção, clear=False)
+    tela_calibração(ev3, seleção, force_clear=False)#=(frame % 10 == 0))
 
     botões = ev3.buttons.pressed()
     if   botao_calibrar in botões:
