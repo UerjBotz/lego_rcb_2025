@@ -20,6 +20,30 @@ def rgb_to_hsv(rgb): # roubado de Lib/colorsys
 
     return (h, s, v)
 
+def hsv_to_rgb(hsv): # roubado de Lib/colorsys
+    h, s, v = hsv
+    if s == 0.0:
+        return v, v, v
+    i = int(h*6.0) # XXX assume int() truncates!
+    f = (h*6.0) - i
+    p = v*(1.0 - s)
+    q = v*(1.0 - s*f)
+    t = v*(1.0 - s*(1.0-f))
+    i = i%6
+    if i == 0:
+        return v, t, p
+    if i == 1:
+        return q, v, p
+    if i == 2:
+        return p, v, t
+    if i == 3:
+        return p, q, v
+    if i == 4:
+        return t, p, v
+    if i == 5:
+        return v, p, q
+    # Cannot get here
+
 class Enum():
     """
     A simple (and fallible) substitute for the enum.Enum class
@@ -43,7 +67,7 @@ class Enum():
     def __getitem__(self, item):
         return self.constant_map[item]
     def __call__(self, num):
-        return self.name_str_map[item]
+        return self.name_str_map[num]
     
     def __iter__(self):
         yield from self.name_str_list
