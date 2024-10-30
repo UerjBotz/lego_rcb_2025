@@ -1,27 +1,36 @@
 from pybricks.hubs import PrimeHub
 
-from pybricks.pupdevices import (Motor, ColorSensor, UltrasonicSensor)
+from pybricks.pupdevices import Motor, ColorSensor, UltrasonicSensor
 
 from pybricks.parameters import Port, Stop, Direction, Button, Color
 from pybricks.tools      import wait, StopWatch
 from pybricks.robotics   import DriveBase
 
-from umath import ceil
 import cores
+import garra
 
 # Create your objects here.
 hub = PrimeHub()
+cabeca = True
 
-sensor_cor     = ColorSensor(Port.A)
-botao_calibrar = Button.CENTER
+if cabeca:
+    #sensor_cor = ColorSensor(Port.A)
 
-tam_fonte = 15
+    roda_esq   = Motor(Port.B, positive_direction=Direction.COUNTERCLOCKWISE)
+    roda_dir   = Motor(Port.A, positive_direction=Direction.CLOCKWISE)
+    rodas = DriveBase(roda_esq, roda_dir,
+                      wheel_diameter=88, axle_track=145.5) #! ver depois se recalibrar
+
+    botao_calibrar = Button.CENTER
+else: #mão
+    motor_garra = Motor(Port.D)
+    motor_gira  = Motor(Port.B)
 
 # Write your program here.
 hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
 
-def tela_escolher_cor(hub, selecao,
-                      tam_max=max(map(len, iter(cores.cor)))):
+def tela_escolher_cor(hub, selecao):
+    tam_max = max(map(len, iter(cores.cor)))
     on_max, off_max = 150, 30
     
     cor = cores.cor(selecao)
@@ -58,6 +67,12 @@ def menu_calibracao(hub, sensor_cor, botao_parar=Button.UP,
 
 
 hub.speaker.beep(frequency=500, duration=100)
+
+dist = 1000
+#rodas.straight(dist, then=Stop.HOLD, wait=True)
+rodas.turn(360, then=Stop.HOLD, wait=True)
+
+raise Exception("SAIR")
 
 while True:
     botões = hub.buttons.pressed()
