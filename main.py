@@ -9,25 +9,41 @@ from pybricks.robotics   import DriveBase
 import cores
 import garra
 
+ID_CABECA = 1
+ID_MAO    = 0
+
 # Create your objects here.
 hub = PrimeHub()
-cabeca = True
+id_robo = ID_MAO
 
-if cabeca:
+def setup_cabeca(hub):
+    global rodas, botao_calibrar
+
     #sensor_cor = ColorSensor(Port.A)
-
     roda_esq   = Motor(Port.B, positive_direction=Direction.COUNTERCLOCKWISE)
     roda_dir   = Motor(Port.A, positive_direction=Direction.CLOCKWISE)
+
     rodas = DriveBase(roda_esq, roda_dir,
                       wheel_diameter=88, axle_track=145.5) #! ver depois se recalibrar
 
     botao_calibrar = Button.CENTER
-else: #mão
-    motor_garra = Motor(Port.D)
-    motor_gira  = Motor(Port.B)
 
-# Write your program here.
-hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
+    hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
+
+def setup_mao():
+    global motor_garra, motor_gira
+
+    motor_garra = Motor(Port.F)
+    motor_gira  = Motor(Port.E)
+
+    hub.system.set_stop_button((Button.CENTER,))
+
+if   id_robo == ID_CABECA:
+    setup_cabeca()
+elif id_robo == ID_MAO:
+    setup_mao()
+else:
+    pass # testar aqui
 
 def tela_escolher_cor(hub, selecao):
     tam_max = max(map(len, iter(cores.cor)))
@@ -65,24 +81,30 @@ def menu_calibracao(hub, sensor_cor, botao_parar=Button.UP,
             )
         elif botao_parar   in botões: break
 
+def main_cabeca():
+    while True:
+        botões = hub.buttons.pressed()
+        if botao_calibrar in botões:
+            hub.speaker.beep(frequency=300, duration=100)
+
+            menu_calibracao(hub, sensor_cor) 
+            print(cores.mapa_rgb)
+            print(cores.mapa_hsv)
+
+            break
+
+def main_mao():
+    garra.fecha_garra(motor_garra, motor_gira)
+    wait(300)
+    garra.abre_garra(motor_garra, motor_gira)
 
 hub.speaker.beep(frequency=500, duration=100)
 
-dist = 1000
-#rodas.straight(dist, then=Stop.HOLD, wait=True)
-rodas.turn(360, then=Stop.HOLD, wait=True)
-
-raise Exception("SAIR")
-
-while True:
-    botões = hub.buttons.pressed()
-    if botao_calibrar in botões:
-        hub.speaker.beep(frequency=300, duration=100)
-
-        menu_calibracao(hub, sensor_cor) 
-        print(cores.mapa_rgb)
-        print(cores.mapa_hsv)
-
-        break
+if   id_robo == ID_CABECA:
+    main_cabeca()
+elif id_robo == ID_MAO:
+    main_mao()
+else:
+    pass # teste aqui
 
 hub.speaker.beep(frequency=250, duration=200)
