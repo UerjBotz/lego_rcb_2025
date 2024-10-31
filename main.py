@@ -8,9 +8,17 @@ from pybricks.robotics   import DriveBase
 
 from umath import ceil
 import cores
+import ultrassom
 
 # Create your objects here.
 hub = PrimeHub()
+hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
+
+ultra = UltrasonicSensor(Port.C)
+
+dists = ultrassom.coleta_dists(hub, ultra, Button.CENTER)
+
+raise Exception("SAIR")
 
 sensor_cor     = ColorSensor(Port.A)
 botao_calibrar = Button.CENTER
@@ -18,8 +26,6 @@ botao_calibrar = Button.CENTER
 tam_fonte = 15
 
 # Write your program here.
-hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
-
 def tela_escolher_cor(hub, selecao,
                       tam_max=max(map(len, iter(cores.cor)))):
     on_max, off_max = 150, 30
