@@ -14,12 +14,12 @@ def calibrar(hub, sensor, botao_parar, ev3=None, spike=None) -> tuple[rgb, rgb, 
         if   ev3:
             rgb = sensor.rgb()
             hsv = rgb_to_hsv(rgb)
+            rgb_norm = tuple(map(lambda pct: pct/100, rgb))
         elif spike:
             hsv = sensor.hsv()
-            rgb = hsv_to_rgb(hsv)
+            rgb_norm = hsv_to_rgb(hsv) #! testar se é normalizado nessa saída mesmo
         else:
             raise Exception("hub inválido")
-        rgb_norm = tuple(map(lambda pct: pct/100, rgb))
 
         minm = tuple(map(min, minm, hsv))
         maxm = tuple(map(max, maxm, hsv))
