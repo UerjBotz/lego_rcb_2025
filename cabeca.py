@@ -61,6 +61,8 @@ def menu_calibracao(hub, sensor_cor, botao_parar=Button.UP,
             )
         elif botao_parar   in botões: break
 
+TAM_BLOCO = 300
+
 def main(hub):
     while True:
         botões = hub.buttons.pressed()
@@ -72,3 +74,24 @@ def main(hub):
             print(cores.mapa_hsv)
 
             break
+        
+        pista = lambda cor: (
+            (cor == Color.WHITE) or (cor == Color.NONE)
+        )
+        rodas.reset()
+        rodas.straight(TAM_BLOCO, wait=False)
+        while not rodas.done():
+            cor_dir = sensor_cor_dir.color()
+            cor_esq = sensor_cor_esq.color()
+
+            if not pista(cor_esq) and not pista(cor_dir):
+                print(f"{cor_esq=}, {cor_dir=}")
+            #if not pista(cor_esq):
+            #    print(cor_esq)
+            #if not pista(cor_dir):
+            #    print(cor_dir)
+                dist = rodas.distance()
+                rodas.reset()
+                rodas.straight(-min(dist, TAM_BLOCO//2),
+                               wait=True)
+                rodas.turn(90)

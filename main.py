@@ -18,6 +18,7 @@ elif id == ID.BRACO:
     hub.speaker.beep(frequency=500, duration=100)
     braco.main()
     hub.speaker.beep(frequency=250, duration=200)
+
 elif id == ID.TESTE:
     from pybricks.hubs import PrimeHub
     from pybricks.pupdevices import Motor, ColorSensor, UltrasonicSensor
