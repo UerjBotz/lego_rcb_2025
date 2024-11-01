@@ -1,3 +1,4 @@
+from pybricks.hubs import PrimeHub
 from pybricks.pupdevices import Motor, ColorSensor
 from pybricks.parameters import Port, Stop, Direction, Button, Color
 
@@ -6,10 +7,13 @@ from pybricks.robotics   import DriveBase
 
 import cores
 
-def setup(hub):
-    global rodas, botao_calibrar, sensor_cor
+def setup():
+    global hub, sensor_cor_esq, sensor_cor_dir, rodas, botao_calibrar
+    
+    hub = PrimeHub()
 
-    sensor_cor = ColorSensor(Port.D)
+    sensor_cor_esq = ColorSensor(Port.D)
+    sensor_cor_dir = ColorSensor(Port.C)
     roda_esq   = Motor(Port.B, positive_direction=Direction.COUNTERCLOCKWISE)
     roda_dir   = Motor(Port.A, positive_direction=Direction.CLOCKWISE)
 
@@ -19,7 +23,7 @@ def setup(hub):
     botao_calibrar = Button.CENTER
 
     hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
-
+    return hub
 
 def tela_escolher_cor(hub, selecao):
     tam_max = max(map(len, iter(cores.cor)))
@@ -63,7 +67,7 @@ def main(hub):
         if botao_calibrar in botões:
             hub.speaker.beep(frequency=300, duration=100)
 
-            menu_calibracao(hub, sensor_cor) 
+            menu_calibracao(hub, sensor_cor_esq)  #! levar os dois sensores em consideração
             print(cores.mapa_rgb)
             print(cores.mapa_hsv)
 
