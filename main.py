@@ -1,5 +1,5 @@
 import cabeca
-import mao
+import braco
 
 from polyfill import Enum
 
@@ -13,10 +13,10 @@ if id == ID.CABECA:
     cabeca.main(hub)
     hub.speaker.beep(frequency=250, duration=200)
 elif id == ID.MAO:
-    hub = mao.setup()
+    hub = braco.setup()
 
     hub.speaker.beep(frequency=500, duration=100)
-    mao.main()
+    braco.main()
     hub.speaker.beep(frequency=250, duration=200)
 elif id == ID.TESTE:
     ...
