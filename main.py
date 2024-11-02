@@ -30,7 +30,15 @@ elif id == ID.TESTE:
     hub = PrimeHub()
     
     hub.speaker.beep(frequency=500, duration=100)
-    ... # código aqui
+    import cores
+    
+    cores.carregar_cores()
+    # print("cores:")
+    # for c in cores.cor:
+    #     c = cores.cor[c]
+    #     print(c, cores.mapa_rgb[c], cores.mapa_hsv[c])
+    
+    
     hub.speaker.beep(frequency=250, duration=200)
 else:
     assert False

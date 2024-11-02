@@ -39,7 +39,7 @@ def tela_escolher_cor(hub, selecao):
     hub.display.text(cor, on=letra_on, off=letra_off) #! mudar pra gerador e fazer letra a letra
     wait(100)
 
-def menu_calibracao(hub, sensor_cor, botao_parar=Button.UP,
+def menu_calibracao(hub, sensor_cor, botao_parar=Button.BLUETOOTH,
                                      botao_aceitar=Button.CENTER,
                                      botao_anterior=Button.LEFT,
                                      botao_proximo=Button.RIGHT):
@@ -59,7 +59,9 @@ def menu_calibracao(hub, sensor_cor, botao_parar=Button.UP,
             cores.mapa_rgb[selecao], *cores.mapa_hsv[selecao] = (
                 cores.calibrar(hub, sensor_cor, botao_aceitar)
             )
-        elif botao_parar   in botões: break
+        elif botao_parar   in botões: 
+            cores.salvar_cores()
+            break
 
 TAM_BLOCO = 300
 
@@ -70,28 +72,26 @@ def main(hub):
             hub.speaker.beep(frequency=300, duration=100)
 
             menu_calibracao(hub, sensor_cor_esq)  #! levar os dois sensores em consideração
-            print(cores.mapa_rgb)
-            print(cores.mapa_hsv)
 
             break
         
-        pista = lambda cor: (
-            (cor == Color.WHITE) or (cor == Color.NONE)
-        )
-        rodas.reset()
-        rodas.straight(TAM_BLOCO, wait=False)
-        while not rodas.done():
-            cor_dir = sensor_cor_dir.color()
-            cor_esq = sensor_cor_esq.color()
+        # pista = lambda cor: (
+        #     (cor == Color.WHITE) or (cor == Color.NONE)
+        # )
+        # rodas.reset()
+        # rodas.straight(TAM_BLOCO, wait=False)
+        # while not rodas.done():
+        #     cor_dir = sensor_cor_dir.color()
+        #     cor_esq = sensor_cor_esq.color()
 
-            if not pista(cor_esq) and not pista(cor_dir):
-                print(f"{cor_esq=}, {cor_dir=}")
-            #if not pista(cor_esq):
-            #    print(cor_esq)
-            #if not pista(cor_dir):
-            #    print(cor_dir)
-                dist = rodas.distance()
-                rodas.reset()
-                rodas.straight(-min(dist, TAM_BLOCO//2),
-                               wait=True)
-                rodas.turn(90)
+        #     if not pista(cor_esq) and not pista(cor_dir):
+        #         print(f"{cor_esq=}, {cor_dir=}")
+        #     #if not pista(cor_esq):
+        #     #    print(cor_esq)
+        #     #if not pista(cor_dir):
+        #     #    print(cor_dir)
+        #         dist = rodas.distance()
+        #         rodas.reset()
+        #         rodas.straight(-min(dist, TAM_BLOCO//2),
+        #                        wait=True)
+        #         rodas.turn(90)
