@@ -6,6 +6,14 @@ from polyfill import Enum, rgb_to_hsv, hsv_to_rgb
 
 from _cores_calibradas import mapa_rgb, mapa_hsv
 
+cor = Enum("cor", ["AMARELO",
+                   "VERDE",
+                   "AZUL",
+                   "VERMELHO",
+                   "MARROM",
+                   "PRETO",
+                   "BRANCO"])
+
 def calibrar(hub, sensor, botao_parar, ev3=None, spike=True) -> tuple[rgb, rgb, rgb]:
     wait(200)
 
@@ -14,8 +22,8 @@ def calibrar(hub, sensor, botao_parar, ev3=None, spike=True) -> tuple[rgb, rgb, 
     while botao_parar not in hub.buttons.pressed():
         if   ev3:
             rgb = sensor.rgb()
-            hsv = rgb_to_hsv(rgb)
-            rgb_norm = tuple(map(lambda pct: pct/100, rgb))
+            rgb_norm = tuple(map(lambda pct: pct/100, rgb)) #! ver
+            hsv = rgb_to_hsv(rgb_norm) #! ver
         elif spike:
             hsv = sensor.hsv()
             hsv = hsv.h, hsv.s, hsv.v
@@ -36,15 +44,6 @@ def calibrar(hub, sensor, botao_parar, ev3=None, spike=True) -> tuple[rgb, rgb, 
         
     med = tuple(map(lambda s: s/cont, soma))
     return (med, minm, maxm)
-
-cor = Enum("cor", ["AMARELO",
-                   "VERDE",
-                   "AZUL",
-                   "VERMELHO",
-                   "MARROM",
-                   "CINZA", #! ver se dá pra usar de verdade
-                   "PRETO",
-                   "BRANCO"])
 
 def identificar_cor_hsv(hsv) -> cor:
     h, s, v = hsv
