@@ -6,6 +6,9 @@ from pybricks.tools      import wait, StopWatch
 from pybricks.robotics   import DriveBase
 
 import cores
+import gui
+
+TAM_BLOCO = 300
 
 def setup():
     global hub, sensor_cor_esq, sensor_cor_dir, rodas, botao_calibrar
@@ -25,30 +28,15 @@ def setup():
     hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
     return hub
 
-def tela_escolher_cor(hub, selecao):
-    tam_max = max(map(len, iter(cores.cor)))
-    on_max, off_max = 150, 30
-    
-    cor = cores.cor(selecao)
-    tam_cor = len(cor)
-    tam_rel = tam_cor/tam_max
-
-    letra_on  =    int(on_max /tam_rel)
-    letra_off = 10+int(off_max/tam_rel/2)
-
-    hub.display.text(cor, on=letra_on, off=letra_off) #! mudar pra gerador e fazer letra a letra
-    wait(100)
-
-def menu_calibracao(hub, sensor_cor, botao_parar=Button.UP,
+def menu_calibracao(hub, sensor_cor, botao_parar=Button.BLUETOOTH,
                                      botao_aceitar=Button.CENTER,
                                      botao_anterior=Button.LEFT,
                                      botao_proximo=Button.RIGHT):
     selecao = 0
 
     while True:
-        tela_escolher_cor(hub, selecao)
-        botões = hub.buttons.pressed()
-
+        botões = gui.tela_escolher_cor(hub, cores.cor, selecao)
+        
         if   botao_proximo  in botões:
             selecao = (selecao + 1) % len(cores.cor)
         elif botao_anterior in botões:
@@ -59,9 +47,10 @@ def menu_calibracao(hub, sensor_cor, botao_parar=Button.UP,
             cores.mapa_rgb[selecao], *cores.mapa_hsv[selecao] = (
                 cores.calibrar(hub, sensor_cor, botao_aceitar)
             )
-        elif botao_parar   in botões: break
+        elif botao_parar   in botões: 
+            cores.salvar_cores()
+            break
 
-TAM_BLOCO = 300
 
 def main(hub):
     while True:
@@ -70,28 +59,26 @@ def main(hub):
             hub.speaker.beep(frequency=300, duration=100)
 
             menu_calibracao(hub, sensor_cor_esq)  #! levar os dois sensores em consideração
-            print(cores.mapa_rgb)
-            print(cores.mapa_hsv)
 
             break
         
-        pista = lambda cor: (
-            (cor == Color.WHITE) or (cor == Color.NONE)
-        )
-        rodas.reset()
-        rodas.straight(TAM_BLOCO, wait=False)
-        while not rodas.done():
-            cor_dir = sensor_cor_dir.color()
-            cor_esq = sensor_cor_esq.color()
+        # pista = lambda cor: (
+        #     (cor == Color.WHITE) or (cor == Color.NONE)
+        # )
+        # rodas.reset()
+        # rodas.straight(TAM_BLOCO, wait=False)
+        # while not rodas.done():
+        #     cor_dir = sensor_cor_dir.color()
+        #     cor_esq = sensor_cor_esq.color()
 
-            if not pista(cor_esq) and not pista(cor_dir):
-                print(f"{cor_esq=}, {cor_dir=}")
-            #if not pista(cor_esq):
-            #    print(cor_esq)
-            #if not pista(cor_dir):
-            #    print(cor_dir)
-                dist = rodas.distance()
-                rodas.reset()
-                rodas.straight(-min(dist, TAM_BLOCO//2),
-                               wait=True)
-                rodas.turn(90)
+        #     if not pista(cor_esq) and not pista(cor_dir):
+        #         print(f"{cor_esq=}, {cor_dir=}")
+        #     #if not pista(cor_esq):
+        #     #    print(cor_esq)
+        #     #if not pista(cor_dir):
+        #     #    print(cor_dir)
+        #         dist = rodas.distance()
+        #         rodas.reset()
+        #         rodas.straight(-min(dist, TAM_BLOCO//2),
+        #                        wait=True)
+        #         rodas.turn(90)
