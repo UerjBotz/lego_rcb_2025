@@ -1,10 +1,12 @@
 from pybricks.hubs import PrimeHub
+
 from pybricks.pupdevices import Motor, ColorSensor
 from pybricks.parameters import Port, Stop, Side, Direction, Button, Color
 
 from pybricks.tools      import wait, StopWatch
 from pybricks.robotics   import DriveBase
 
+from bluetooth import comando_bt, TX_BRACO, TX_CABECA
 from urandom import choice
 
 import cores
@@ -17,10 +19,11 @@ TAM_BLOCO_BECO = TAM_BLOCO_Y - TAM_FAIXA #os blocos dos becos são menores por c
 
 DIST_EIXO_SENSOR = 80 #mm
 
+
 def setup():
     global hub, sensor_cor_esq, sensor_cor_dir, rodas, botao_calibrar
     
-    hub = PrimeHub()
+    hub = PrimeHub(broadcast_channel=1, observe_channels=[2])
 
     sensor_cor_esq = ColorSensor(Port.D)
     sensor_cor_dir = ColorSensor(Port.C)
@@ -65,7 +68,6 @@ def menu_calibracao(hub, sensor_cor, botao_parar=Button.BLUETOOTH,
         elif botao_parar   in botões:
             wait(100)
             return mapa_hsv
-
 
 pista  = lambda cor: ((cor == Color.WHITE) or
                       (cor == Color.NONE ))
@@ -116,6 +118,7 @@ def achar_azul():
         if parede(cor_esq) or parede(cor_dir): rodas.turn(180)
 
         cor_esq, cor_dir = achar_limite() # anda reto até achar o limite
+
         print(f"achar_azul:105: {cor_esq=}, {cor_dir=}")
 
         return certificar_cor(sensor_cor_dir, sensor_cor_esq, Color.BLUE)
@@ -123,6 +126,7 @@ def achar_azul():
         print(f"achar_azul:109: {cor_esq=}, {cor_dir=}")
 
         re_meio_bloco()
+
         rodas.turn(90)
 
         return False
@@ -151,6 +155,24 @@ def certificar_cor(sensor_dir, sensor_esq, cor, cor2=None):
 
 def alinhar():
     pass
+
+def mandar_fechar_garra():
+    hub.ble.broadcast((comando_bt.fecha_garra,))
+    comando = -1
+    while comando != comando_bt.fechei:
+        comando = hub.ble.observe(TX_BRACO)
+        if comando is not None:
+            comando, *args = comando
+        else: continue
+
+def mandar_abrir_garra():
+    hub.ble.broadcast((comando_bt.abre_garra,))
+    comando = -1
+    while comando != comando_bt.abri:
+        comando = hub.ble.observe(TX_BRACO)
+        if comando is not None:
+            comando, *args = comando
+        else: continue
 
 def main(hub):
     crono = StopWatch()
