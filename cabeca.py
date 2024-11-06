@@ -174,6 +174,16 @@ def mandar_abrir_garra():
             comando, *args = comando
         else: continue
 
+
+def mandar_ver_cor_passageiro():
+    hub.ble.broadcast((comando_bt.ver_cor_passageiro,))
+    comando = -1
+    while comando != comando_bt.cor_passageiro:
+        comando = hub.ble.observe(TX_BRACO)
+        if comando is not None:
+            comando, *args = comando
+        else: continue
+
 def main(hub):
     crono = StopWatch()
     while crono.time() < 1000:
