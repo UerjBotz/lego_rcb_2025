@@ -23,7 +23,7 @@ DIST_EIXO_SENSOR = 80 #mm
 def setup():
     global hub, sensor_cor_esq, sensor_cor_dir, rodas, botao_calibrar
     
-    hub = PrimeHub(broadcast_channel=1, observe_channels=[2])
+    hub = PrimeHub(broadcast_channel=TX_CABECA, observe_channels=[TX_BRACO])
 
     sensor_cor_esq = ColorSensor(Port.D)
     sensor_cor_dir = ColorSensor(Port.C)
