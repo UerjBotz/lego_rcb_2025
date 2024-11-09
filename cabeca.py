@@ -145,7 +145,6 @@ def achar_azul():
         print(f"achar_azul:109: {cor_esq=}, {cor_dir=}")
 
         re_meio_bloco()
-
         rodas.turn(90)
 
         return False
@@ -308,7 +307,6 @@ def main(hub):
         botões = hub.buttons.pressed()
         if botao_calibrar in botões:
             hub.speaker.beep(frequency=300, duration=100)
-
             #! levar os dois sensores em consideração separadamente
             mapa_hsv = menu_calibracao(hub, sensor_cor_esq, sensor_cor_dir)
             cores.repl_calibracao(mapa_hsv)#, lado="esq")
