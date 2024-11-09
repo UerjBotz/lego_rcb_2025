@@ -95,6 +95,11 @@ def parar():
     rodas.straight(DIST_PARAR)
     rodas.stop()
 
+ANG_PARAR=-0.0
+def parar_girar():
+    rodas.turn(ANG_PARAR)
+    rodas.stop()
+
 def achar_limite() -> tuple[Color, Color]:
     rodas.reset()
     rodas.straight(TAM_BLOCO*6, wait=False)
@@ -123,6 +128,7 @@ def achar_azul():
         re_meio_bloco()
         rodas.straight(-TAM_BLOCO_BECO) 
         rodas.turn(choice((90, -90)))
+        
 
         cor_esq, hsv_esq, cor_dir, hsv_dir = achar_limite() # anda reto até achar o limite
         print(f"achar_azul:97: {cor_esq=}, {cor_dir=}")
@@ -137,6 +143,7 @@ def achar_azul():
         print(f"achar_azul:109: {cor_esq=}, {cor_dir=}")
 
         re_meio_bloco()
+
         rodas.turn(90)
 
         return False
@@ -164,7 +171,62 @@ def certificar_cor(sensor_dir, sensor_esq, cor, cor2=None):
             (cor_esq == cores.Color2cor[cor]))
 
 def alinhar():
-    pass
+    while True:
+        cor_dir = sensor_cor_dir.color()
+        cor_esq = sensor_cor_esq.color()
+        print(cor_dir, cor_esq)
+
+        ang_girado = 0.0
+        dist_percorrida = 0.0
+        rodas.straight(TAM_BLOCO/10, wait=False)
+        if rodas.distance() > TAM_BLOCO*4//5:
+            rodas.straight(-rodas.distance(), wait=True)
+            rodas.turn(90)
+            rodas.reset()
+            continue
+
+        if not pista(cor_esq) or not pista(cor_dir):
+            parar()
+            dist_percorrida = rodas.distance()
+            if not pista(cor_esq) and not pista(cor_dir):
+                print("ENTREI RETO")
+                rodas.straight(-dist_percorrida, wait=True)
+                return True
+            else:
+                print("ENTREI TORTO")
+                rodas.turn(-90, wait=False)
+                cor_dir = sensor_cor_dir.color()
+                cor_esq = sensor_cor_esq.color()
+                if not (pista(cor_dir) ^ pista(cor_esq)):
+                    print("cor_igual")
+                    parar_girar()
+                    ang_girado = rodas.angle()
+                    rodas.turn(-ang_girado, wait=True)
+                    rodas.straight(-dist_percorrida, wait=True)                
+                    rodas.turn(ang_girado, wait=True)
+
+                    rodas.turn(90)
+                    rodas.reset()
+                    return alinhar()
+
+
+def mandar_fechar_garra():
+    hub.ble.broadcast((comando_bt.fecha_garra,))
+    comando = -1
+    while comando != comando_bt.fechei:
+        comando = hub.ble.observe(TX_BRACO)
+        if comando is not None:
+            comando, *args = comando
+        else: continue
+
+def mandar_abrir_garra():
+    hub.ble.broadcast((comando_bt.abre_garra,))
+    comando = -1
+    while comando != comando_bt.abri:
+        comando = hub.ble.observe(TX_BRACO)
+        if comando is not None:
+            comando, *args = comando
+        else: continue
 
 def mandar_fechar_garra():
     hub.ble.broadcast((comando_bt.fecha_garra,))
@@ -208,8 +270,13 @@ def main(hub):
 
     hub.system.set_stop_button((Button.BLUETOOTH,))
     hub.speaker.beep(frequency=600, duration=100)
+
+    alinhou = False
     #! antes de qualquer coisa, era bom ver se na sua frente tem obstáculo
     #! sobre isso ^ ainda, tem que tomar cuidado pra não confundir eles com os passageiros
     while True:
+        if not alinhou:
+            alinhou = alinhar()
+            continue
         achou = achar_azul()
         if achou: return #!
