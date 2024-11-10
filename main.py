@@ -1,5 +1,7 @@
 from polyfill import Enum
 
+import bipes
+
 ID = Enum("ID", ["BRACO", "CABECA", "TESTE"])
 id = ID.CABECA
 
@@ -7,16 +9,16 @@ if id == ID.CABECA:
     import cabeca
     hub = cabeca.setup()
     
-    hub.speaker.beep(frequency=500, duration=100)
+    bipes.inicio(hub)
     cabeca.main(hub)
-    hub.speaker.beep(frequency=250, duration=250)
+    bipes.final(hub)
 elif id == ID.BRACO:
     import braco
     hub = braco.setup()
 
-    hub.speaker.beep(frequency=500, duration=100)
+    bipes.inicio(hub)
     braco.main(hub)
-    hub.speaker.beep(frequency=250, duration=250)
+    bipes.final(hub)
 
 elif id == ID.TESTE:
     from pybricks.hubs import PrimeHub
@@ -29,9 +31,9 @@ elif id == ID.TESTE:
     
     hub = PrimeHub()
     
-    hub.speaker.beep(frequency=500, duration=100)
+    bipes.inicio(hub)
     ...
-    hub.speaker.beep(frequency=250, duration=200)
+    bipes.final(hub)
 else:
     assert False
 

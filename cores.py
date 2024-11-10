@@ -68,7 +68,7 @@ def iter_coleta(hub, botao_parar, sensor):
         yield (minm, soma, cont, maxm)
 
 
-def coletar_valores(hub, botao_parar, esq=None, dir=None) -> tuple[hsv, hsv, hsv]:
+def coletar_valores(hub, botao_parar, esq=None, dir=None) -> tuple[hsv, hsv, hsv]: # type: ignore
     wait(200)
     if esq and dir:
         for info_esq, info_dir in zip(iter_coleta(hub, botao_parar, esq),
@@ -91,7 +91,7 @@ def coletar_valores(hub, botao_parar, esq=None, dir=None) -> tuple[hsv, hsv, hsv
 
     return (minm, tuple(map(round, med)), maxm)
 
-def identificar_por_intervalo_hsv(hsv) -> cor:
+def identificar_por_intervalo_hsv(hsv) -> cor: # type: ignore
     h, s, v = hsv
     for i, (m, mm, M) in enumerate(mapa_hsv):
         hm, _, _ = m
@@ -100,9 +100,33 @@ def identificar_por_intervalo_hsv(hsv) -> cor:
         if h in range(hm, hM): return i
     return cor.NENHUMA
 
-def identificar(color) -> cor:
+def identificar(color) -> cor: # type: ignore
     hsv = color.h, color.s, color.v
     return identificar_por_intervalo_hsv(hsv)
+
+pista  = lambda cor: ((cor == Color.WHITE) or
+                      (cor == Color.NONE ))
+parede = lambda cor: ((cor == Color.BLACK) or
+                      (cor == Color.NONE ) or
+                      (cor == Color.YELLOW))
+beco   = lambda cor: ((cor == Color.RED))
+
+pista_hsv  = lambda hsv: ((identificar(hsv) == cor.BRANCO) or
+                          (identificar(hsv) == cor.NENHUMA))
+parede_hsv = lambda hsv: ((identificar(hsv) == cor.PRETO) or
+                          (identificar(hsv) == cor.AMARELO) or
+                          (identificar(hsv) == cor.NENHUMA))
+
+def certificar(sensor_dir, sensor_esq, cor, cor2=None) -> bool:
+    cor2 = cor if cor2 is None else cor2 #! levar em consideração
+
+    cor_dir = identificar(sensor_dir.hsv())
+    cor_esq = identificar(sensor_esq.hsv())
+    print(f"certificar_cor:125: {cor(cor_esq)}, {cor(cor_dir)}")
+
+    return ((cor_dir == Color2cor[cor]) or
+            (cor_esq == Color2cor[cor2]))
+
 
 def repl_calibracao(mapa_hsv, lado=""):
     print(f"mapa_hsv{lado} = [")
