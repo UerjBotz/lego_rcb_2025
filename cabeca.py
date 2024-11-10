@@ -6,11 +6,12 @@ from pybricks.parameters import Port, Stop, Side, Direction, Button, Color
 from pybricks.tools      import wait, StopWatch
 from pybricks.robotics   import DriveBase
 
+from lib.bipes import bipe_calibracao, bipe_cabeca, musica_vitoria, musica_derrota
+
 from urandom import choice
 
 import cores
 import gui
-import bipes
 import bluetooth as blt
 
 
@@ -267,14 +268,14 @@ def main(hub):
     while crono.time() < 0: #! ativar calibração quando for usar
         botões = hub.buttons.pressed()
         if botao_calibrar in botões:
-            bipes.inicio_calibracao(hub)
+            bipe_calibracao(hub)
             #! levar os dois sensores em consideração separadamente
             mapa_hsv = menu_calibracao(hub, sensor_cor_esq, sensor_cor_dir)
             cores.repl_calibracao(mapa_hsv)#, lado="esq")
             return
 
     hub.system.set_stop_button((Button.BLUETOOTH,))
-    bipes.inicio_cabeca(hub)
+    bipe_cabeca(hub)
 
     #! antes de qualquer coisa, era bom ver se na sua frente tem obstáculo
     #! sobre isso ^ ainda, tem que tomar cuidado pra não confundir eles com os passageiros
@@ -288,8 +289,8 @@ def main(hub):
     if pegou:
         dar_meia_volta()
         blt.abrir_garra(hub)
-        bipes.vitoria(hub)
+        musica_vitoria(hub)
     else:
-        bipes.derrota(hub)
+        musica_derrota(hub)
         wait(1000)
         return #! fazer main retornar que nem em c e tocar o som com base nisso

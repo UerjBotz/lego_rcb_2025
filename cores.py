@@ -1,9 +1,9 @@
 from pybricks.tools      import wait
 from pybricks.parameters import Color
 
-from polyfill import Enum, rgb_to_hsv, hsv_to_rgb
+from lib.polyfill import Enum, rgb_to_hsv, hsv_to_rgb
 
-from _cores_calibradas import mapa_hsv
+from lib.cores_calibradas_ import mapa_hsv
 
 cor = Enum("cor", ["AMARELO",
                    "VERDE",

@@ -36,11 +36,11 @@ notas_vitoria = [
 ]
 #! melhorar musiquinha vitória (mario), talvez só cortar
 
-inicio = lambda hub: hub.speaker.beep(frequency=500, duration=100)
-final  = lambda hub: hub.speaker.beep(frequency=250, duration=250)
+bipe_inicio = lambda hub: hub.speaker.beep(frequency=500, duration=100)
+bipe_final  = lambda hub: hub.speaker.beep(frequency=250, duration=250)
 
-inicio_calibracao = lambda hub: hub.speaker.beep(frequency=300, duration=100)
-inicio_cabeca     = lambda hub: hub.speaker.beep(frequency=600, duration=100)
+bipe_calibracao = lambda hub: hub.speaker.beep(frequency=300, duration=100)
+bipe_cabeca     = lambda hub: hub.speaker.beep(frequency=600, duration=100)
 
-vitoria = lambda hub: hub.speaker.play_notes(notas_vitoria, tempo=220)
-derrota = lambda hub: hub.speaker.play_notes(notas_derrota) #! ajustar tempo, etc
+musica_vitoria = lambda hub: hub.speaker.play_notes(notas_vitoria, tempo=220)
+musica_derrota = lambda hub: hub.speaker.play_notes(notas_derrota) #! ajustar tempo, etc

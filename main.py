@@ -1,6 +1,6 @@
-from polyfill import Enum
+from lib.polyfill import Enum
 
-import bipes
+from lib.bipes import bipe_inicio, bipe_final
 
 ID = Enum("ID", ["BRACO", "CABECA", "TESTE"])
 id = ID.CABECA
@@ -9,16 +9,16 @@ if id == ID.CABECA:
     import cabeca
     hub = cabeca.setup()
     
-    bipes.inicio(hub)
+    bipe_inicio(hub)
     cabeca.main(hub)
-    bipes.final(hub)
+    bipe_final(hub)
 elif id == ID.BRACO:
     import braco
     hub = braco.setup()
 
-    bipes.inicio(hub)
+    bipe_inicio(hub)
     braco.main(hub)
-    bipes.final(hub)
+    bipe_final(hub)
 
 elif id == ID.TESTE:
     from pybricks.hubs import PrimeHub
@@ -31,9 +31,9 @@ elif id == ID.TESTE:
     
     hub = PrimeHub()
     
-    bipes.inicio(hub)
+    bipe_inicio(hub)
     ...
-    bipes.final(hub)
+    bipe_final(hub)
 else:
     assert False
 

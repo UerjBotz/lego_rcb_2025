@@ -1,5 +1,4 @@
-from pybricks.hubs import PrimeHub
-from polyfill import Enum
+from lib.polyfill import Enum
 
 TX_CABECA = 1
 TX_BRACO = 2
@@ -14,10 +13,10 @@ comando_bt = Enum("comando_bt", ["fecha_garra",
                                  "cor_passageiro",     
                                  "distancias"])
 
-def esperar_resposta(hub, esperado):
+def esperar_resposta(hub, esperado, canal=TX_BRACO):
     comando = -1
     while comando != esperado:
-        comando = hub.ble.observe(TX_BRACO)
+        comando = hub.ble.observe(canal)
         if comando is not None:
             comando, *args = comando
     return args
