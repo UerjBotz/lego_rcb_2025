@@ -116,6 +116,7 @@ pista_hsv  = lambda hsv: ((identificar(hsv) == cor.BRANCO) or
 parede_hsv = lambda hsv: ((identificar(hsv) == cor.PRETO) or
                           (identificar(hsv) == cor.AMARELO) or
                           (identificar(hsv) == cor.NENHUMA))
+beco_hsv   = lambda hsv: ((identificar(hsv) == cor.VERMELHO))
 
 def certificar(sensor_dir, sensor_esq, cor, cor2=None) -> bool:
     cor2 = cor if cor2 is None else cor2 #! levar em consideração
