@@ -1,7 +1,7 @@
 from pybricks.hubs import PrimeHub
 
 from pybricks.pupdevices import Motor, ColorSensor
-from pybricks.parameters import Port, Stop, Side, Direction, Button, Color
+from pybricks.parameters import Port, Axis, Stop, Side, Direction, Button, Color
 
 from pybricks.tools      import wait, StopWatch
 from pybricks.robotics   import DriveBase
@@ -31,7 +31,7 @@ def setup():
     global hub, sensor_cor_esq, sensor_cor_dir, rodas
     global botao_calibrar, rodas_conf_padrao
     
-    hub = PrimeHub(broadcast_channel=blt.TX_CABECA, observe_channels=[blt.TX_BRACO])
+    hub = PrimeHub(broadcast_channel=blt.TX_CABECA, observe_channels=[blt.TX_BRACO], top_side=Axis.X, front_side=-Axis.Z)
 
     hub.display.orientation(Side.BOTTOM)
     hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
@@ -56,13 +56,16 @@ class mudar_velocidade():
     1. mudar a velocidade do robô
     2. restaurar a velocidade do robô
     """
-    def __init__(self, rodas, vel): 
+    def __init__(self, rodas, vel, vel_ang=None):
         self.rodas = rodas
         self.vel   = vel
+        self.vel_ang = vel_ang
  
-    def __enter__(self): 
+    def __enter__(self):
         self.conf_anterior = self.rodas.settings()
-        _, *conf_resto     = self.conf_anterior
+        [_, *conf_resto]   = self.conf_anterior
+        if self.vel_ang:
+            conf_resto[1] = self.vel_ang
         self.rodas.settings(self.vel, *conf_resto)
         return self
 
@@ -162,43 +165,79 @@ def achar_azul():
             return False
 
 def alinhar():
-    while True:
+    lados_certos = 0
+    dist_percorrida = 0
+    print("ALINHANDO")
+    while lados_certos < 2:
         cor_dir = sensor_cor_dir.color()
         cor_esq = sensor_cor_esq.color()
-        print(cor_dir, cor_esq)
+        
+        rodas.straight(TAM_BLOCO//5, wait=False)
+        if cores.pista(cor_esq) and cores.pista(cor_dir):
+            #Segue na pista
+            if rodas.distance() > TAM_BLOCO*4//5:
+                print("TUDO BRANCO")
+                dar_re(rodas.distance())
+                rodas.turn(90)
+                rodas.reset()
 
-        ang_girado = 0.0
-        dist_percorrida = 0.0
-        rodas.straight(TAM_BLOCO/10, wait=False)
-        if rodas.distance() > TAM_BLOCO*4//5:
-            dar_re(rodas.distance())
-            rodas.turn(90)
-            rodas.reset()
-            continue
+                lados_certos += 1
 
-        if not cores.pista(cor_esq) or not cores.pista(cor_dir):
+        elif not cores.pista(cor_esq) and not cores.pista(cor_dir):
+            #Bateu de frente
+            print("TUDO PAREDE")
             parar()
-            dist_percorrida = rodas.distance()
-            if not cores.pista(cor_esq) and not cores.pista(cor_dir):
-                print("ENTREI RETO")
-                dar_re(dist_percorrida)
-                return True
-            else:
-                print("ENTREI TORTO")
-                rodas.turn(-90, wait=False)
-                cor_dir = sensor_cor_dir.color()
-                cor_esq = sensor_cor_esq.color()
-                if not (cores.pista(cor_dir) ^ cores.pista(cor_esq)):
-                    print("cor_igual")
-                    parar_girar()
-                    ang_girado = rodas.angle()
-                    rodas.turn(-ang_girado)
-                    dar_re(dist_percorrida)                
-                    rodas.turn(ang_girado)
+            dar_re(dist_percorrida)
+            rodas.turn(90)
 
-                    rodas.turn(90)
-                    rodas.reset()
-                    return alinhar()
+            rodas.reset()
+            lados_certos += 1
+        
+        elif cores.pista(cor_dir):
+            #Esquerda bateu
+            print("ESQUERDA BATEU")
+            lados_certos = 0
+            ang_max_dir = -90
+            for _ in range(2):
+                rodas.turn(ang_max_dir, wait=False)
+                while cores.pista(cor_esq) ^ cores.pista(cor_dir):
+                    cor_dir = sensor_cor_dir.color()
+                    cor_esq = sensor_cor_esq.color()
+                    print(f'{cor_esq=}, {cor_dir=}')
+                    if rodas.done():
+                        ang_max_dir = -ang_max_dir
+                        rodas.turn(ang_max_dir, wait=False)
+                ang_girado = rodas.angle()
+                rodas.turn(-ang_girado)
+                dar_re(rodas.distance())
+                rodas.turn(ang_girado)
+                rodas.reset()
+            rodas.turn(90)
+            lados_certos += 1
+
+        elif cores.pista(cor_esq):
+            #Direita bateu
+            print("DIREITA BATEU")
+            lados_certos = 0
+            ang_max_esq = 90
+            for _ in range(2):
+                rodas.turn(ang_max_esq, wait=False)
+                while cores.pista(cor_esq) ^ cores.pista(cor_dir):
+                    cor_dir = sensor_cor_dir.color()
+                    cor_esq = sensor_cor_esq.color()
+                    print(f'{cor_esq=}, {cor_dir=}')
+                    if rodas.done():
+                        ang_max_esq = -ang_max_esq
+                        rodas.turn(ang_max_esq, wait=False)
+                ang_girado = rodas.angle()
+                rodas.turn(-ang_girado)
+                dar_re(rodas.distance())
+                rodas.turn(ang_girado)
+                rodas.reset()
+            rodas.turn(90)
+            lados_certos += 1
+
+    return True
 
 def pegar_primeiro_passageiro() -> bool:
     #! a cor é pra ser azul
@@ -281,7 +320,8 @@ def main(hub):
     #! sobre isso ^ ainda, tem que tomar cuidado pra não confundir eles com os passageiros
     alinhou = achou_azul = False
     while not alinhou:
-        alinhou = alinhar()
+        with mudar_velocidade(rodas, 140, 40):
+            alinhou = alinhar()
     while not achou_azul:
         achou_azul = achar_azul()
 
@@ -293,4 +333,4 @@ def main(hub):
     else:
         musica_derrota(hub)
         wait(1000)
-        return #! fazer main retornar que nem em c e tocar o som com base nisso
+        return main(hub) #return #! fazer main retornar que nem em c e tocar o som com base nisso
