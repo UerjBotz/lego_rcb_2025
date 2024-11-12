@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+# from dataclasses import dataclass
 from polyfill    import Enum
 from cores       import cor
 
@@ -15,20 +15,20 @@ class posicao_parede(Enum):
     L = 2
     O = 3
 
-@dataclass
-class Edificio():
-    nome: str
-    cor:  cor
-    tipo: tipo_celula          = tipo_celula.EDIFICIO
-    paredes: list[tipo_parede] = None
-    ocupada: bool              = True
+class Edificio:
+    def __init__(self, nome, cor , paredes):
+        self.nome = nome
+        self.cor = cor
+        self.tipo = tipo_celula.EDIFICIO
+        self.paredes = paredes
+        self.ocupada = True
 
-@dataclass
-class Rua():
-    ocupada: bool = False
-    tipo = tipo_celula.RUA
+class Rua:
+    def __init__(self):
+        self.ocupada = False
+        self.tipo = tipo_celula.RUA
     
-celula = Edificio | Rua
+# celula = Edificio | Rua
 
 def imprime_matriz(matriz):
     """Imprime a matriz de forma alinhada."""
@@ -117,9 +117,6 @@ mapa = [
 ]
 
 ## implementação do A* (adaptada de <https://www.geeksforgeeks.org/a-search-algorithm-in-python/>)
-import math
-import heapq
-
 class Cell():
     def __init__(self, i_pai=0,
                        j_pai=0,
@@ -177,9 +174,13 @@ def trace_path(info_celulas, dest):
     for i in path:
         print("->", i, end=" ")
     print()
+    
+    return path
 
 # Implement the A* search algorithm
 def a_estrela(grid, src, dest):
+    from polyfill import heappop, heappush
+    
     # Check if the source and destination are valid
     if not dentro_dos_limites(grid, src) or not dentro_dos_limites(grid, dest):
         print("Source or destination is invalid")
@@ -213,7 +214,7 @@ def a_estrela(grid, src, dest):
 
     # Initialize the open list (cells to be visited) with the start cell
     open_list = []
-    heapq.heappush(open_list, (0.0, i, j))
+    heappush(open_list, (0.0, i, j))
 
     # Initialize the flag for whether destination is found
     achou_dest = False
@@ -221,7 +222,7 @@ def a_estrela(grid, src, dest):
     # Main loop of A* search algorithm
     while len(open_list) > 0:
         # Pop the cell with the smallest f value from the open list
-        p = heapq.heappop(open_list)
+        p = heappop(open_list)
 
         # Mark the cell as visited
         i = p[1]
@@ -243,9 +244,9 @@ def a_estrela(grid, src, dest):
                     info_celulas[new_i][new_j].j_pai = j
                     print("The destination cell is found")
                     # Trace and print the path from source to destination
-                    trace_path(info_celulas, dest)
-                    achou_dest = True
-                    return
+                    return trace_path(info_celulas, dest)
+                    # achou_dest = True
+                    # return
                 else:
                     # Calculate the new f, g, and h values
                     g_new = info_celulas[i][j].g + 1.0
@@ -255,7 +256,7 @@ def a_estrela(grid, src, dest):
                     # If the cell is not in the open list or the new f value is smaller
                     if info_celulas[new_i][new_j].f == float('inf') or info_celulas[new_i][new_j].f > f_new:
                         # Add the cell to the open list
-                        heapq.heappush(open_list, (f_new, new_i, new_j))
+                        heappush(open_list, (f_new, new_i, new_j))
                         # Update the cell details
                         info_celulas[new_i][new_j] = Cell(f = f_new,
                                                           g = g_new,
@@ -269,9 +270,12 @@ def a_estrela(grid, src, dest):
 
 #funcao que recebe lista de posicoes na matriz e transforma em lista de direcoes
 def caminho_relativo(caminho_absoluto: list[tuple[int, int]]):
+    if caminho_absoluto is None:
+        print("Caminho Errado")
     #movimentos
     direita = (0, 1); baixo = (1, 0); esquerda = (0, -1); cima = (-1, 0)
     direcoes = [(0,0)]
+    # print(caminho_absoluto)
     for i in range(1, len(caminho_absoluto)):
         dx = caminho_absoluto[i][0] - caminho_absoluto[i - 1][0]
         dy = caminho_absoluto[i][1] - caminho_absoluto[i - 1][1]
@@ -290,11 +294,10 @@ tipos_movimentos = Enum("tipos_movimentos",
                         ["FRENTE", "DIREITA", "ESQURDA", "TRAS"])
 
 def movimento_relativo(relativo, orientacao):
-    pass
     movimentos = []
     orientacoes = ["N", "L", "S", "O"]
     idx_orientacao = orientacoes.index(orientacao)
-    print(idx_orientacao)
+    # print(idx_orientacao)
     nova_orientacao = orientacao
     
     caminho_relativo = relativo.copy()
@@ -327,16 +330,18 @@ def movimento_relativo(relativo, orientacao):
     return movimentos
     
 
-if __name__ == "__main__":
-    pos_inicial = (1, 1)
-    pos_final   = (4, 3)
+# if __name__ == "__main__":
+#     pos_inicial = (1, 1)
+#     pos_final   = (4, 3)
 
-    print("Mapa Original:")
-    imprime_matriz(mapa)
-    coloca_obstaculo(2, 3)
-    print("\nMapa com obstáculo:")
-    imprime_matriz(mapa)
+#     print("Mapa Original:")
+#     imprime_matriz(mapa)
+#     coloca_obstaculo(2, 3)
+#     print("\nMapa com obstáculo:")
+#     imprime_matriz(mapa)
     
-    resutado = a_estrela(mapa, pos_inicial, pos_final)
-    print(resutado)
+#     resultado = a_estrela(mapa, pos_inicial, pos_final)
+#     print(resultado)
+    
+#     print("Movimento relativo: "+ movimento_relativo(caminho_relativo(resultado), "N"))
     
