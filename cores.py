@@ -101,8 +101,12 @@ def identificar_por_intervalo_hsv(hsv) -> cor: # type: ignore
     return cor.NENHUMA
 
 def identificar(color) -> cor: # type: ignore
-    hsv = color.h, color.s, color.v
-    return identificar_por_intervalo_hsv(hsv)
+    try:
+        return identificar_por_intervalo_hsv(color)
+    except TypeError:
+        hsv = color.h, color.s, color.v
+        return identificar_por_intervalo_hsv(hsv)
+    
 
 pista  = lambda cor: ((cor == Color.WHITE) or
                       (cor == Color.NONE ))

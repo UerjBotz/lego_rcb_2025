@@ -193,43 +193,63 @@ def alinhar():
                     parar_girar()
                     ang_girado = rodas.angle()
                     rodas.turn(-ang_girado)
-                    dar_re(dist_percorrida)                
+                    dar_re(dist_percorrida)
                     rodas.turn(ang_girado)
 
                     rodas.turn(90)
                     rodas.reset()
                     return alinhar()
 
+def pegar_passageiro():
+    print("pegar passageiro")
+    with mudar_velocidade(rodas, 50):
+        regra_corresp, info = andar_ate(ver_nao_pista, ver_passageiro_perto,
+                                        dist_max=TAM_BLOCO*4)
+    if   regra_corresp == 1:
+        print("regra 1")
+        #! checar se vermelho mesmo
+        (cor_esq, cor_dir) = info
+        print(f"{cor_esq=}, {cor_dir=}")
+        re_meio_bloco()
+        rodas.turn(180)
+        return False # é pra ter chegado no vermelho
+    elif regra_corresp == 2:
+        print("regra 2")
+        (dist_esq, dist_dir) = info
+        dist = dist_esq if dist_esq < dist_dir else dist_dir
+        ang  = -90      if dist_esq < dist_dir else 90
+        #! inverti a virada aqui, checar se não tão invertidos na definição
+
+        blt.abrir_garra(hub)
+        dar_re(DIST_EIXO_SENS_DIST-20) #! desmagificar
+        rodas.turn(ang)
+        rodas.straight(dist)
+        blt.fechar_garra(hub)
+        cor_cano = blt.ver_cor_passageiro(hub)
+        print(cores.cor(cores.identificar(cor_cano)))
+
+        if cores.identificar(cor_cano) == cores.cor.BRANCO:
+            blt.abrir_garra(hub)
+            rodas.straight(-dist)
+            rodas.turn(-ang)
+            return False
+        return True
+    else:
+        rodas.turn(180)
+        return False #chegou na distância máxima
+
 def pegar_primeiro_passageiro() -> bool:
+    print("pegando passageiro")
     #! a cor é pra ser azul
     rodas.turn(90)
     achar_limite()
     #! a cor é pra ser vermelha
-
     rodas.turn(180)
-
-    with mudar_velocidade(rodas, 50):
-        regra_corresp, info = andar_ate(ver_nao_pista, ver_passageiro_perto,
-                                        dist_max=TAM_BLOCO*4)
-        if   regra_corresp == 1:
-            #! checar se vermelho mesmo
-            (cor_esq, cor_dir) = info
-            re_meio_bloco()
-            return False # é pra ter chegado no vermelho
-        elif regra_corresp == 2:
-            (dist_esq, dist_dir) = info
-            dist = dist_esq if dist_esq < dist_dir else dist_dir
-            ang  = -90      if dist_esq < dist_dir else 90
-            #! inverti a virada aqui, checar se não tão invertidos na definição
-
-            blt.abrir_garra(hub)
-            dar_re(DIST_EIXO_SENS_DIST-20) #! desmagificar
-            rodas.turn(ang)
-            rodas.straight(dist)
-            blt.fechar_garra(hub)
-            return True
-        else:
-            return False #chegou na distância máxima
+    pegou = pegar_passageiro()
+    while not pegou:
+        pegou = pegar_passageiro()
+    
+    return True
 
 
 def menu_calibracao(hub, sensor_esq, sensor_dir,
@@ -284,7 +304,7 @@ def main(hub):
         alinhou = alinhar()
     while not achou_azul:
         achou_azul = achar_azul()
-
+    #achar_limite()
     pegou = pegar_primeiro_passageiro()
     if pegou:
         dar_meia_volta()
