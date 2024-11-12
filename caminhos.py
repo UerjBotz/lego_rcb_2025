@@ -267,7 +267,64 @@ def a_estrela(grid, src, dest):
     if not achou_dest:
         print("Failed to find the destination cell")
 
-##
+#funcao que recebe lista de posicoes na matriz e transforma em lista de direcoes
+def caminho_relativo(caminho_absoluto: list[tuple[int, int]]):
+    #movimentos
+    direita = (0, 1); baixo = (1, 0); esquerda = (0, -1); cima = (-1, 0)
+    direcoes = [(0,0)]
+    for i in range(1, len(caminho_absoluto)):
+        dx = caminho_absoluto[i][0] - caminho_absoluto[i - 1][0]
+        dy = caminho_absoluto[i][1] - caminho_absoluto[i - 1][1]
+        if dx == 0 and dy == 1:
+            direcoes.append(direita)
+        elif dx == 1 and dy == 0:
+            direcoes.append(baixo)
+        elif dx == 0 and dy == -1:
+            direcoes.append(esquerda)
+        elif dx == -1 and dy == 0:
+            direcoes.append(cima)
+    return direcoes
+
+#orientação = N | S | L | O
+tipos_movimentos = Enum("tipos_movimentos",
+                        ["FRENTE", "DIREITA", "ESQURDA", "TRAS"])
+
+def movimento_relativo(caminho_relativo, orientacao):
+    pass
+    movimentos = []
+    orientacoes = ["N", "L", "S", "O"]
+    idx_orientacao = orientacoes.index(orientacao)
+    print(idx_orientacao)
+    nova_orientacao = orientacao
+    
+    caminho_relativo.pop(0)
+    
+    for movimento in caminho_relativo:
+        if movimento == (0, 1):  # direita
+            nova_orientacao = "L"
+        elif movimento == (1, 0):  # baixo
+            nova_orientacao = "S"
+        elif movimento == (0, -1):  # esquerda
+            nova_orientacao = "O"
+        elif movimento == (-1, 0):  # cima
+            nova_orientacao = "N"
+
+        nova_idx_orientacao = orientacoes.index(nova_orientacao)
+        diferenca = (nova_idx_orientacao - idx_orientacao) % 4
+
+        if diferenca == 0:
+            movimentos.append("FRENTE")
+        elif diferenca == 1:
+            movimentos.append("DIREITA")
+        elif diferenca == 2:
+            movimentos.append("TRAS")
+        elif diferenca == 3:
+            movimentos.append("ESQUERDA")
+
+        idx_orientacao = nova_idx_orientacao
+
+    return movimentos
+    
 
 if __name__ == "__main__":
     pos_inicial = (1, 1)
