@@ -14,14 +14,17 @@ cor = Enum("cor", ["AMARELO",
                    "BRANCO",
                    "NENHUMA"])
 
+def Color2tuple(color):
+    return color.h, color.s, color.v
+
 Color2cor = {
-    Color.YELLOW: cor.AMARELO,
-    Color.GREEN:  cor.VERDE, 
-    Color.BLUE:   cor.AZUL,
-    Color.RED:    cor.VERMELHO,
-    Color.BROWN:  cor.MARROM,
-    Color.BLACK:  cor.PRETO,
-    Color.WHITE:  cor.BRANCO,
+    Color2tuple(Color.YELLOW): cor.AMARELO,
+    Color2tuple(Color.GREEN ): cor.VERDE, 
+    Color2tuple(Color.BLUE  ): cor.AZUL,
+    Color2tuple(Color.RED   ): cor.VERMELHO,
+    Color2tuple(Color.BROWN ): cor.MARROM,
+    Color2tuple(Color.BLACK ): cor.PRETO,
+    Color2tuple(Color.WHITE ): cor.BRANCO,
 }
 
 cor2Color = [
@@ -33,6 +36,8 @@ cor2Color = [
     Color.BLACK,
     Color.WHITE,
 ]
+
+#hsv = tuple[float, float, float]
 
 def norm_hsv(hsv):
     if type(hsv) != tuple:
@@ -66,7 +71,6 @@ def iter_coleta(hub, botao_parar, sensor):
             print(cor_txt_hsv, cor_txt_rgb)
 
         yield (minm, soma, cont, maxm)
-
 
 def coletar_valores(hub, botao_parar, esq=None, dir=None) -> tuple[hsv, hsv, hsv]:
     wait(200)
