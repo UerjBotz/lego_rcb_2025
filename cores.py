@@ -45,6 +45,11 @@ def unnorm_hsv(hsv):
     h, s, v = hsv
     return (h*360, s*100, v*100)
 
+def todas(sensor_esq, sensor_dir) -> tuple[tuple, tuple]:
+    esq = sensor_esq.color(), sensor_esq.hsv()
+    dir = sensor_dir.color(), sensor_dir.hsv()
+    return (esq, dir)
+
 def iter_coleta(hub, botao_parar, sensor):
     minm, maxm = (360, 100, 100), (0, 0, 0)
     soma, cont = (000, 000, 000), 0
@@ -93,6 +98,12 @@ def coletar_valores(hub, botao_parar, esq=None, dir=None) -> tuple[hsv, hsv, hsv
 
 def identificar_por_intervalo_hsv(hsv) -> cor: # type: ignore
     h, s, v = hsv
+    
+    if   v <= 20: #! usar valores do arquivo
+        return cor.PRETO
+    elif s <= 10 and v >= 90:
+        return cor.BRANCO
+
     for i, (m, mm, M) in enumerate(mapa_hsv):
         hm, _, _ = m
         hM, _, _ = M
@@ -101,21 +112,38 @@ def identificar_por_intervalo_hsv(hsv) -> cor: # type: ignore
     return cor.NENHUMA
 
 def identificar(color) -> cor: # type: ignore
-    hsv = color.h, color.s, color.v
-    return identificar_por_intervalo_hsv(hsv)
+    try:
+        return identificar_por_intervalo_hsv(color)
+    except TypeError:
+        hsv = color.h, color.s, color.v
+        return identificar_por_intervalo_hsv(hsv)
+    
 
-pista  = lambda cor: ((cor == Color.WHITE) or
-                      (cor == Color.NONE ))
-parede = lambda cor: ((cor == Color.BLACK) or
-                      (cor == Color.NONE ) or
-                      (cor == Color.YELLOW))
-beco   = lambda cor: ((cor == Color.RED))
+def pista_unificado(color, hsv):
+    deles = (color == Color.WHITE)
+    return deles
 
-pista_hsv  = lambda hsv: ((identificar(hsv) == cor.BRANCO) or
-                          (identificar(hsv) == cor.NENHUMA))
-parede_hsv = lambda hsv: ((identificar(hsv) == cor.PRETO) or
-                          (identificar(hsv) == cor.AMARELO) or
-                          (identificar(hsv) == cor.NENHUMA))
+def parede_unificado(color, hsv):
+    deles = ((color == Color.BLACK) or
+             (color == Color.NONE ) or
+             (color == Color.YELLOW))
+
+    combinado = (((color == Color.RED) or
+                  (color == Color.BLUE)) and
+                 ((identificar(hsv) == cor.PRETO) or
+                  (identificar(hsv) == cor.BRANCO) or
+                  (identificar(hsv) == cor.NENHUMA)))
+
+    return deles or combinado
+
+def beco_unificado(color, hsv):
+    deles = (color == Color.RED)
+    return deles
+
+def lombada_unificado(color, hsv):
+    combinado = ((color == Color.WHITE) and
+                 (identificar(hsv) != cor.AZUL)) #! talvez == BRANCO, pq é isso
+    return combinado
 
 def certificar(sensor_dir, sensor_esq, cor, cor2=None) -> bool:
     cor2 = cor if cor2 is None else cor2 #! levar em consideração

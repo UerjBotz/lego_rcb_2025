@@ -91,18 +91,19 @@ def re_meio_bloco(eixo_menor=False):
     else:
         dar_re(TAM_BLOCO//2   - DIST_EIXO_SENSOR)
 
-def ver_nao_pista():
-    cor_esq = sensor_cor_esq.color()
-    cor_dir = sensor_cor_dir.color()
-    return ((not cores.pista(cor_esq) or not cores.pista(cor_dir)),
-            cor_esq, cor_dir)
+def ver_nao_pista() -> tuple[bool, tuple[Color, hsv], tuple[Color, hsv]]: # type: ignore
+    cor_esq, hsv_esq = sensor_cor_esq.color(), sensor_cor_esq.hsv()
+    cor_dir, hsv_dir = sensor_cor_dir.color(), sensor_cor_dir.hsv()
+
+    return ((not cores.pista_unificado(cor_esq, hsv_esq) or not cores.pista_unificado(cor_dir, hsv_dir)),
+            (cor_esq, hsv_esq), (cor_dir, hsv_dir))
 
 def ver_passageiro_perto():
     dist_esq, dist_dir = blt.ver_distancias(hub)
     return ((dist_esq < DIST_PASSAGEIRO_RUA or dist_dir < DIST_PASSAGEIRO_RUA),
             dist_esq, dist_dir)
 
-def andar_ate(*conds_parada: Callable, dist_max=TAM_BLOCO*6) -> tuple[bool, Any]: # type: ignore
+def andar_ate(*conds_parada: Callable, dist_max=TAM_BLOCO*6) -> tuple[bool, tuple[Any]]: # type: ignore
     rodas.reset()
     rodas.straight(dist_max, wait=False)
     while not rodas.done():
@@ -114,58 +115,54 @@ def andar_ate(*conds_parada: Callable, dist_max=TAM_BLOCO*6) -> tuple[bool, Any]
                 return i+1, retorno
     return 0, (rodas.distance(),)
 
-def achar_limite() -> tuple[Color, hsv, Color, hsv]: # type: ignore
-    cor_esq, cor_dir = andar_ate(ver_nao_pista)
+def achar_limite() -> tuple[tuple[Color, hsv], tuple[Color, hsv]]: # type: ignore
+    achou, (esq, dir) = andar_ate(ver_nao_pista)
+    return cores.todas(sensor_cor_esq, sensor_cor_dir) if achou else esq, dir
 
-    hsv_esq = sensor_cor_esq.hsv()
-    hsv_dir = sensor_cor_dir.hsv()
-    return (cor_esq, hsv_esq, cor_dir, hsv_dir)
+def achar_azul() -> bool:
+    esq, dir = achar_limite() # anda reto até achar o limite
 
-def achar_azul():
-    cor_esq, hsv_esq, cor_dir, hsv_dir = achar_limite() # anda reto até achar o limite
-
-    if   cores.beco(cor_esq) or cores.beco(cor_dir): #! beco é menor que os outros blocos
-        print(f"achar_azul:91: {cor_esq=}, {cor_dir=}")
+    if   cores.beco_unificado(*esq) or cores.beco_unificado(*dir): #! beco é menor que os outros blocos
+        print(f"achar_azul:91: {esq=}, {dir=}")
 
         re_meio_bloco()
         dar_re(TAM_BLOCO_BECO) 
         rodas.turn(choice((90, -90)))
         
+        esq, dir = achar_limite() # anda reto até achar o limite
+        print(f"achar_azul:97: {esq=}, {dir=}")
 
-        cor_esq, hsv_esq, cor_dir, hsv_dir = achar_limite() # anda reto até achar o limite
-        print(f"achar_azul:97: {cor_esq=}, {cor_dir=}")
+        if cores.parede_unificado(*esq) or cores.parede_unificado(*dir): rodas.turn(180)
 
-        if cores.parede_hsv(hsv_esq) or cores.parede_hsv(hsv_dir): rodas.turn(180)
+        esq, dir = achar_limite() # anda reto até achar o limite
+        print(f"achar_azul:105: {esq=}, {dir=}")
 
-        cor_esq, hsv_esq, cor_dir, hsv_dir = achar_limite() # anda reto até achar o limite
-        print(f"achar_azul:105: {cor_esq=}, {cor_dir=}")
-
-        return cores.certificar(sensor_cor_dir, sensor_cor_esq, Color.BLUE)
-    elif cores.parede(cor_esq) or cores.parede(cor_dir): #! hsv
-        print(f"achar_azul:109: {cor_esq=}, {cor_dir=}")
+        return cores.certificar(sensor_cor_dir, sensor_cor_esq, Color.BLUE) #! certificar provalmente deveria ser modificada
+    elif cores.parede_unificado(*esq) or cores.parede_unificado(*dir): #! hsv
+        print(f"achar_azul:109: {esq=}, {dir=}")
 
         re_meio_bloco()
         rodas.turn(90)
 
         return False
     else: #azul
-        print(f"achar_azul:114: {cor_esq=}, {cor_dir=}")
+        print(f"achar_azul:114: {esq=}, {dir=}")
 
-        cor_esq, hsv_esq, cor_dir, hsv_dir = achar_limite() # anda reto até achar o limite
-        print(f"achar_azul:117: {cor_esq=}, {cor_dir=}")
+        esq, dir = achar_limite() # anda reto até achar o limite
+        print(f"achar_azul:117: {esq=}, {dir=}")
 
-        if cores.certificar(sensor_cor_dir, sensor_cor_esq, Color.BLUE):
+        if cores.certificar(sensor_cor_dir, sensor_cor_esq, Color.BLUE): #! certificar
             return True
         else:
             re_meio_bloco()
             rodas.turn(90)
             return False
 
-def alinhar():
+def alinhar() -> True:
     while True:
-        cor_dir = sensor_cor_dir.color()
-        cor_esq = sensor_cor_esq.color()
-        print(cor_dir, cor_esq)
+        esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
+
+        print(f"alinhar: {esq=}, {dir=}")
 
         ang_girado = 0.0
         dist_percorrida = 0.0
@@ -176,60 +173,79 @@ def alinhar():
             rodas.reset()
             continue
 
-        if not cores.pista(cor_esq) or not cores.pista(cor_dir):
+        if not cores.pista_unificado(*esq) or not cores.pista_unificado(*dir):
             parar()
             dist_percorrida = rodas.distance()
-            if not cores.pista(cor_esq) and not cores.pista(cor_dir):
+            if not cores.pista_unificado(*esq) and not cores.pista_unificado(*dir):
                 print("ENTREI RETO")
                 dar_re(dist_percorrida)
                 return True
             else:
                 print("ENTREI TORTO")
                 rodas.turn(-90, wait=False)
-                cor_dir = sensor_cor_dir.color()
-                cor_esq = sensor_cor_esq.color()
-                if not (cores.pista(cor_dir) ^ cores.pista(cor_esq)):
+                esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
+                if not (cores.pista_unificado(*esq) ^ cores.pista_unificado(*dir)):
                     print("cor_igual")
                     parar_girar()
                     ang_girado = rodas.angle()
                     rodas.turn(-ang_girado)
-                    dar_re(dist_percorrida)                
+                    dar_re(dist_percorrida)
                     rodas.turn(ang_girado)
 
                     rodas.turn(90)
                     rodas.reset()
                     return alinhar()
 
+def pegar_passageiro() -> bool:
+    print("pegar passageiro")
+    with mudar_velocidade(rodas, 50):
+        regra_corresp, info = andar_ate(ver_nao_pista, ver_passageiro_perto,
+                                        dist_max=TAM_BLOCO*4)
+    if   regra_corresp == 1:
+        print("regra 1")
+        #! checar se vermelho mesmo
+        (cor_esq, cor_dir) = info
+        print(f"{cor_esq=}, {cor_dir=}")
+        re_meio_bloco()
+        rodas.turn(180)
+        return False # é pra ter chegado no vermelho
+    elif regra_corresp == 2:
+        print("regra 2")
+        (dist_esq, dist_dir) = info
+        dist = dist_esq if dist_esq < dist_dir else dist_dir
+        ang  = -90      if dist_esq < dist_dir else 90
+        #! inverti a virada aqui, checar se não tão invertidos na definição
+
+        blt.abrir_garra(hub)
+        dar_re(DIST_EIXO_SENS_DIST-20) #! desmagificar
+        rodas.turn(ang)
+        rodas.straight(dist)
+        blt.fechar_garra(hub)
+        cor_cano = blt.ver_cor_passageiro(hub)
+        print(cores.cor(cores.identificar(cor_cano)))
+
+        if cores.identificar(cor_cano) == cores.cor.BRANCO:
+            blt.abrir_garra(hub)
+            rodas.straight(-dist)
+            rodas.turn(-ang)
+            return False
+        return True
+    else:
+        rodas.turn(180)
+        return False #chegou na distância máxima
+
 def pegar_primeiro_passageiro() -> bool:
+    print("pegando passageiro")
     #! a cor é pra ser azul
     rodas.turn(90)
     achar_limite()
     #! a cor é pra ser vermelha
-
     rodas.turn(180)
-
-    with mudar_velocidade(rodas, 50):
-        regra_corresp, info = andar_ate(ver_nao_pista, ver_passageiro_perto,
-                                        dist_max=TAM_BLOCO*4)
-        if   regra_corresp == 1:
-            #! checar se vermelho mesmo
-            (cor_esq, cor_dir) = info
-            re_meio_bloco()
-            return False # é pra ter chegado no vermelho
-        elif regra_corresp == 2:
-            (dist_esq, dist_dir) = info
-            dist = dist_esq if dist_esq < dist_dir else dist_dir
-            ang  = -90      if dist_esq < dist_dir else 90
-            #! inverti a virada aqui, checar se não tão invertidos na definição
-
-            blt.abrir_garra(hub)
-            dar_re(DIST_EIXO_SENS_DIST-20) #! desmagificar
-            rodas.turn(ang)
-            rodas.straight(dist)
-            blt.fechar_garra(hub)
-            return True
-        else:
-            return False #chegou na distância máxima
+    pegou = pegar_passageiro()
+    while not pegou:
+        pegou = pegar_passageiro()
+    
+    return True
 
 
 def menu_calibracao(hub, sensor_esq, sensor_dir,
@@ -265,7 +281,7 @@ def menu_calibracao(hub, sensor_esq, sensor_dir,
 
 def main(hub):
     crono = StopWatch()
-    while crono.time() < 0: #! ativar calibração quando for usar
+    while crono.time() < 100: #! ativar calibração quando for usar
         botões = hub.buttons.pressed()
         if botao_calibrar in botões:
             bipe_calibracao(hub)
@@ -284,7 +300,7 @@ def main(hub):
         alinhou = alinhar()
     while not achou_azul:
         achou_azul = achar_azul()
-
+    #achar_limite()
     pegou = pegar_primeiro_passageiro()
     if pegou:
         dar_meia_volta()
