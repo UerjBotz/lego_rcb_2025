@@ -289,7 +289,7 @@ def caminho_relativo(caminho_absoluto: list[tuple[int, int]]):
 tipos_movimentos = Enum("tipos_movimentos",
                         ["FRENTE", "DIREITA", "ESQURDA", "TRAS"])
 
-def movimento_relativo(caminho_relativo, orientacao):
+def movimento_relativo(relativo, orientacao):
     pass
     movimentos = []
     orientacoes = ["N", "L", "S", "O"]
@@ -297,6 +297,7 @@ def movimento_relativo(caminho_relativo, orientacao):
     print(idx_orientacao)
     nova_orientacao = orientacao
     
+    caminho_relativo = relativo.copy()
     caminho_relativo.pop(0)
     
     for movimento in caminho_relativo:
