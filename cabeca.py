@@ -165,6 +165,7 @@ def alinhar():
     while True:
         cor_dir = sensor_cor_dir.color()
         cor_esq = sensor_cor_esq.color()
+
         print(cor_dir, cor_esq)
 
         ang_girado = 0.0
@@ -285,7 +286,7 @@ def menu_calibracao(hub, sensor_esq, sensor_dir,
 
 def main(hub):
     crono = StopWatch()
-    while crono.time() < 0: #! ativar calibração quando for usar
+    while crono.time() < 100: #! ativar calibração quando for usar
         botões = hub.buttons.pressed()
         if botao_calibrar in botões:
             bipe_calibracao(hub)

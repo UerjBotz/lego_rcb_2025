@@ -93,6 +93,12 @@ def coletar_valores(hub, botao_parar, esq=None, dir=None) -> tuple[hsv, hsv, hsv
 
 def identificar_por_intervalo_hsv(hsv) -> cor: # type: ignore
     h, s, v = hsv
+    
+    if v <= 20: #! usar valores do arquivo
+        return cor.PRETO
+    elif s <= 10 and v >= 90:
+        return cor.BRANCO
+
     for i, (m, mm, M) in enumerate(mapa_hsv):
         hm, _, _ = m
         hM, _, _ = M
