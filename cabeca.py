@@ -102,6 +102,27 @@ def ver_passageiro_perto():
     return ((dist_esq < DIST_PASSAGEIRO_RUA or dist_dir < DIST_PASSAGEIRO_RUA),
             dist_esq, dist_dir)
 
+def ver_obstaculo():
+    recuo = TAM_BLOCO*3//2
+    dist_esq, dist_dir = blt.ver_distancias(hub)
+    return (dist_esq <= recuo or dist_dir <= recuo,
+            dist_esq, dist_dir)
+
+def evitar_obstaculo():
+    rodas.turn(90)
+    viu, *dists = ver_obstaculo()
+    if not viu:
+        print("SEM OBSTACULO")
+        print(dists)
+        rodas.turn(-90)
+    else:
+        print("TEM OBSTACULO")
+        print(dists)
+
+    foi_terminado, *dists = andar_ate(ver_obstaculo, dist_max=TAM_BLOCO*4)
+    dist_perco = rodas.distance()
+    print(f"Distância percorrida até ver:{dist_perco}")
+
 def andar_ate(*conds_parada: Callable, dist_max=TAM_BLOCO*6) -> tuple[bool, Any]: # type: ignore
     rodas.reset()
     rodas.straight(dist_max, wait=False)
@@ -131,7 +152,6 @@ def achar_azul():
         dar_re(TAM_BLOCO_BECO) 
         rodas.turn(choice((90, -90)))
         
-
         cor_esq, hsv_esq, cor_dir, hsv_dir = achar_limite() # anda reto até achar o limite
         print(f"achar_azul:97: {cor_esq=}, {cor_dir=}")
 
@@ -300,6 +320,10 @@ def main(hub):
 
     #! antes de qualquer coisa, era bom ver se na sua frente tem obstáculo
     #! sobre isso ^ ainda, tem que tomar cuidado pra não confundir eles com os passageiros
+
+    evitar_obstaculo()
+    return
+
     alinhou = achou_azul = False
     while not alinhou:
         alinhou = alinhar()
