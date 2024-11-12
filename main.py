@@ -51,11 +51,34 @@ elif id == ID.TESTE:
             break
         hsv_esq = cabeca.sensor_cor_esq.hsv()
         hsv_dir = cabeca.sensor_cor_dir.hsv()
-        cor_esq  = cores.cor(cores.identificar(hsv_esq))
-        cor_dir  = cores.cor(cores.identificar(hsv_dir))
         color_esq = cabeca.sensor_cor_esq.color()
         color_dir = cabeca.sensor_cor_dir.color()
-        print(f"{cor_esq=}\t{cor_dir=}\t|\t{color_esq=}\t{color_dir=}")
+        classif_cor = dict(
+            deles_esq = color_esq,
+            deles_dir = color_dir,
+            nosso_esq = cores.cor(cores.identificar(hsv_esq)),
+            nosso_dir = cores.cor(cores.identificar(hsv_dir)),
+        )
+        classif_categ = dict(
+            pista=(
+                cores.pista_unificado(color_esq, hsv_esq),
+                cores.pista_unificado(color_dir, hsv_dir)
+            ),
+            lombada=(
+                cores.lombada_unificado(color_esq, hsv_esq),
+                cores.lombada_unificado(color_dir, hsv_dir)
+            ),
+            beco=(
+                cores.beco_unificado(color_esq, hsv_esq),
+                cores.beco_unificado(color_dir, hsv_dir)
+            ),
+            parede=(
+                cores.parede_unificado(color_esq, hsv_esq),
+                cores.parede_unificado(color_dir, hsv_dir)
+            )
+        )
+        print(classif_cor, classif_categ, '\n', sep='\n')
+        wait(200)
 
     bipe_final(hub)
 else:
