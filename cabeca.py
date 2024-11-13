@@ -128,37 +128,37 @@ def achar_azul() -> bool:
     esq, dir = achar_limite() # anda reto até achar o limite
 
     if   cores.beco_unificado(*esq) or cores.beco_unificado(*dir): #! beco é menor que os outros blocos
-        print(f"achar_azul:91: {esq=}, {dir=}")
+        print(f"achar_azul: beco")
 
         re_meio_bloco()
         dar_re(TAM_BLOCO_BECO) 
         rodas.turn(choice((90, -90)))
         
         esq, dir = achar_limite() # anda reto até achar o limite
-        print(f"achar_azul:97: {esq=}, {dir=}")
+        print(f"achar_azul: beco indo azul")
 
         if cores.parede_unificado(*esq) or cores.parede_unificado(*dir): rodas.turn(180)
 
         esq, dir = achar_limite() # anda reto até achar o limite
-        print(f"achar_azul:105: {esq=}, {dir=}")
+        print(f"achar_azul: beco indo azul certeza")
 
-        return cores.certificar(sensor_cor_dir, sensor_cor_esq, Color.BLUE) #! certificar provalmente deveria ser modificada
+        return sensor_cor_esq.color() == Color.BLUE or sensor_cor_dir.color() == Color.BLUE#! certificar provalmente deveria ser modificad
     elif cores.parede_unificado(*esq) or cores.parede_unificado(*dir): #! hsv
-        print(f"achar_azul:109: {esq=}, {dir=}")
+        print(f"achar_azul: parede")
 
         re_meio_bloco()
         rodas.turn(90)
 
         return False
     else: #azul
-        print(f"achar_azul:114: {esq=}, {dir=}")
-
+        print("achar_azul: vi azul")
         esq, dir = achar_limite() # anda reto até achar o limite
-        print(f"achar_azul:117: {esq=}, {dir=}")
 
-        if cores.certificar(sensor_cor_dir, sensor_cor_esq, Color.BLUE): #! certificar
+        if sensor_cor_esq.color() == Color.BLUE or sensor_cor_dir.color() == Color.BLUE: #! certificar provalmente deveria ser modificadO
+            print("achar_azul: azul mesmo")
             return True
         else:
+            print("achar_azul: não azul")
             re_meio_bloco()
             rodas.turn(90)
             return False
@@ -219,6 +219,7 @@ def alinhar(max_tentativas=3, vel=80, vel_ang=20, giro_max=70) -> None:
         
 
 def pegar_passageiro() -> bool:
+    global ori
     print("pegar passageiro")
     with mudar_velocidade(rodas, 50):
         regra_corresp, info = andar_ate(ver_nao_pista, ver_passageiro_perto,
@@ -230,6 +231,9 @@ def pegar_passageiro() -> bool:
         print(f"{cor_esq=}, {cor_dir=}")
         re_meio_bloco()
         rodas.turn(180)
+        if   ori == "S": ori = "N"
+        elif ori == "N": ori = "S"
+
         return False # é pra ter chegado no vermelho
     elif regra_corresp == 2:
         print("regra 2")
@@ -257,12 +261,15 @@ def pegar_passageiro() -> bool:
         return False #chegou na distância máxima
 
 def pegar_primeiro_passageiro() -> bool:
+    global ori
     print("pegando passageiro")
     #! a cor é pra ser azul
     rodas.turn(90)
+    ori = "S"
     achar_limite()
     #! a cor é pra ser vermelha
     rodas.turn(180)
+    ori = "N"
     pegou = pegar_passageiro()
     while not pegou:
         pegou = pegar_passageiro()
@@ -327,6 +334,8 @@ def menu_calibracao(hub, sensor_esq, sensor_dir,
 
 
 def main(hub):
+    global ori
+
     crono = StopWatch()
     while crono.time() < 100: #! ativar calibração quando for usar
         botões = hub.buttons.pressed()
@@ -347,11 +356,32 @@ def main(hub):
     alinhar()
     while not achou_azul:
         achou_azul = achar_azul()
+    ori = "L"
     #achar_limite()
-    pegou = pegar_primeiro_passageiro() #! aqui a gente precisa saber a orientação (se é norte/sul|esquerda/direita)
+    pegou, ori = pegar_primeiro_passageiro() #! aqui a gente precisa saber a orientação (se é norte/sul|esquerda/direita)
     if pegou:
-        dar_meia_volta()
+        achar_limite()
+        cor = blt.ver_cor_passageiro()
+        if cor == Color.GREEN:
+            fim = (1,4)
+            ori_fim = "S"
+        if cor == Color.RED:
+            fim = (2,3)
+            ori_fim = "O"
+        if cor == Color.BLUE:
+            fim = (0,3)
+            ori_fim = "L"
+        else:
+            pass #!
+
+        if ori == "N": pos = (0,5)
+        if ori == "S": pos = (4,5)
+
+        seguir_caminho(pos, fim, ori)
+        rodas.straight(TAM_BLOCO//2)
         blt.abrir_garra(hub)
+        rodas.straight(-TAM_BLOCO//2)
+        #main(hub) #!
         musica_vitoria(hub)
     else:
         musica_derrota(hub)
