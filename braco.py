@@ -7,11 +7,16 @@ from pybricks.tools      import wait, StopWatch
 
 from bluetooth import comando_bt, TX_BRACO, TX_CABECA
 
+from lib.bipes import bipe_calibracao
+
+
 import garra
+import cores
+import gui
 
 def setup():
     global hub, motor_garra, sensor_cor_frente, ultra_dir, ultra_esq
-    global garra_fechada
+    global garra_fechada, botao_calibrar
 
     hub = PrimeHub(broadcast_channel=TX_BRACO, observe_channels=[TX_CABECA])
     
@@ -22,6 +27,7 @@ def setup():
     ultra_dir = UltrasonicSensor(Port.F)
 
     garra_fechada = False
+    botao_calibrar = Button.BLUETOOTH
 
     hub.system.set_stop_button((Button.CENTER,))
     return hub
@@ -29,8 +35,20 @@ def setup():
 def main(hub):
     global garra_fechada
 
+    crono = StopWatch()
+    while crono.time() < 100: #! ativar calibração quando for usar
+        botões = hub.buttons.pressed()
+        if botao_calibrar in botões:
+            bipe_calibracao(hub)
+            wait(150)
+            #! levar os dois sensores em consideração separadamente
+            mapa_hsv = cores.coletar_valores(hub, Button.BLUETOOTH, sensor_cor_frente)
+            print(mapa_hsv)
+            return
+
     #contador_msgs = 0
     while True:
+        
         comando = hub.ble.observe(TX_CABECA)
         if comando is not None:
             #id_msg, 
