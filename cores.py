@@ -157,8 +157,8 @@ def certificar(sensor_dir, sensor_esq, cor, cor2=None) -> bool:
     cor_esq = identificar(sensor_esq.hsv())
     print(f"certificar_cor:125: {cor(cor_esq)}, {cor(cor_dir)}")
 
-    return ((cor_dir == Color2cor[cor]) or
-            (cor_esq == Color2cor[cor2]))
+    return ((cor_dir == Color2cor[Color2tuple(cor)]) or
+            (cor_esq == Color2cor[Color2tuple(cor2)]))
 
 
 def repl_calibracao(mapa_hsv, lado=""):

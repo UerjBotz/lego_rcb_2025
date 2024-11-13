@@ -17,6 +17,7 @@ elif id == ID.BRACO:
     import braco
     hub = braco.setup()
     print(hub.battery.voltage())
+    print(hub.system.name())
 
     bipe_inicio(hub)
     braco.main(hub)
