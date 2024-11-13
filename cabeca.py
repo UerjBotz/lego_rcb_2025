@@ -6,8 +6,8 @@ from pybricks.parameters import Port, Stop, Side, Direction, Button, Color
 from pybricks.tools      import wait, StopWatch
 from pybricks.robotics   import DriveBase
 
-from lib.bipes import bipe_calibracao, bipe_cabeca, musica_vitoria, musica_derrota
-from caminhos  import achar_movimentos, tipo_movimento
+from lib.bipes     import bipe_calibracao, bipe_cabeca, musica_vitoria, musica_derrota
+from lib.caminhos  import achar_movimentos, tipo_movimento
 
 from urandom import choice
 

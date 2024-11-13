@@ -8,11 +8,7 @@ tipo_parede = Enum("tipo_parede", ["PAREDE",
                                    "ENTRADA",
                                    "ENTRADA_COM_CANO"])
 
-class posicao_parede(Enum):
-    N = 0
-    S = 1
-    L = 2
-    O = 3
+posicao_parede = Enum("posicao_parede", ["N", "S", "L", "O"])
 
 class Edificio:
     def __init__(self, nome, cor, paredes):
