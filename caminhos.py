@@ -1,6 +1,5 @@
-# from dataclasses import dataclass
-from polyfill    import Enum
-from cores       import cor
+from lib.polyfill    import Enum, heappop, heappush
+from cores           import cor
 
 
 tipo_celula = Enum("tipo_celula", ["RUA", "EDIFICIO"])
@@ -16,9 +15,9 @@ class posicao_parede(Enum):
     O = 3
 
 class Edificio:
-    def __init__(self, nome, cor , paredes):
+    def __init__(self, nome, cor, paredes):
         self.nome = nome
-        self.cor = cor
+        self.cor  = cor
         self.tipo = tipo_celula.EDIFICIO
         self.paredes = paredes
         self.ocupada = True
@@ -44,13 +43,13 @@ def imprime_matriz(matriz):
         print()
 
 def coloca_obstaculo(x, y):
-    if mapa[x][y].tipo == tipo_celula.EDIFICIO:
-        return
+    if mapa[x][y].tipo == tipo_celula.EDIFICIO: return #! falhar mais alto
+
     mapa[x][y].ocupada = True
 
 def tira_obstaculo(x, y):
-    if mapa[x][y].tipo == tipo_celula.EDIFICIO:
-        return
+    if mapa[x][y].tipo == tipo_celula.EDIFICIO: return
+
     mapa[x][y].ocupada = False
 
 def coloca_passageiro(edificio: Edificio, entrada: str): #ver como faz para escolher a entrada para ocupar
@@ -179,8 +178,6 @@ def trace_path(info_celulas, dest):
 
 # Implement the A* search algorithm
 def a_estrela(grid, src, dest):
-    from polyfill import heappop, heappush
-    
     # Check if the source and destination are valid
     if not dentro_dos_limites(grid, src) or not dentro_dos_limites(grid, dest):
         print("Source or destination is invalid")
@@ -270,15 +267,17 @@ def a_estrela(grid, src, dest):
 
 #funcao que recebe lista de posicoes na matriz e transforma em lista de direcoes
 def caminho_relativo(caminho_absoluto: list[tuple[int, int]]):
-    if caminho_absoluto is None:
-        print("Caminho Errado")
+    if caminho_absoluto is None: print("Caminho Errado")
+
     #movimentos
     direita = (0, 1); baixo = (1, 0); esquerda = (0, -1); cima = (-1, 0)
     direcoes = [(0,0)]
+
     # print(caminho_absoluto)
     for i in range(1, len(caminho_absoluto)):
         dx = caminho_absoluto[i][0] - caminho_absoluto[i - 1][0]
         dy = caminho_absoluto[i][1] - caminho_absoluto[i - 1][1]
+
         if dx == 0 and dy == 1:
             direcoes.append(direita)
         elif dx == 1 and dy == 0:
@@ -287,14 +286,14 @@ def caminho_relativo(caminho_absoluto: list[tuple[int, int]]):
             direcoes.append(esquerda)
         elif dx == -1 and dy == 0:
             direcoes.append(cima)
+
     return direcoes
 
 #orientação = N | S | L | O
-tipos_movimentos = Enum("tipos_movimentos",
-                        ["FRENTE", "DIREITA", "ESQURDA", "TRAS"])
+tipo_movimento = Enum("tipo_movimento",
+                      ["FRENTE", "DIREITA", "ESQUERDA", "TRAS"])
 
 def movimento_relativo(relativo, orientacao):
-    movimentos = []
     orientacoes = ["N", "L", "S", "O"]
     idx_orientacao = orientacoes.index(orientacao)
     # print(idx_orientacao)
@@ -303,8 +302,9 @@ def movimento_relativo(relativo, orientacao):
     caminho_relativo = relativo.copy()
     caminho_relativo.pop(0)
     
+    movimentos = []
     for movimento in caminho_relativo:
-        if movimento == (0, 1):  # direita
+        if   movimento == (0, 1):  # direita
             nova_orientacao = "L"
         elif movimento == (1, 0):  # baixo
             nova_orientacao = "S"
@@ -316,19 +316,25 @@ def movimento_relativo(relativo, orientacao):
         nova_idx_orientacao = orientacoes.index(nova_orientacao)
         diferenca = (nova_idx_orientacao - idx_orientacao) % 4
 
-        if diferenca == 0:
-            movimentos.append("FRENTE")
+        if   diferenca == 0:
+            movimentos.append(tipo_movimento.FRENTE)
         elif diferenca == 1:
-            movimentos.append("DIREITA")
+            movimentos.append(tipo_movimento.DIREITA)
         elif diferenca == 2:
-            movimentos.append("TRAS")
+            movimentos.append(tipo_movimento.TRAS)
         elif diferenca == 3:
-            movimentos.append("ESQUERDA")
+            movimentos.append(tipo_movimento.ESQUERDA)
 
         idx_orientacao = nova_idx_orientacao
 
     return movimentos
-    
+
+def achar_movimentos(pos_ini, pos_fim, orientacao):
+    caminho     = a_estrela(mapa, pos_ini, pos_fim)
+    caminho_rel = caminho_relativo(caminho)
+
+    return movimento_relativo(caminho_rel, orientacao)
+
 
 # if __name__ == "__main__":
 #     pos_inicial = (1, 1)

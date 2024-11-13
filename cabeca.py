@@ -7,6 +7,7 @@ from pybricks.tools      import wait, StopWatch
 from pybricks.robotics   import DriveBase
 
 from lib.bipes import bipe_calibracao, bipe_cabeca, musica_vitoria, musica_derrota
+from caminhos  import achar_movimentos, tipo_movimento
 
 from urandom import choice
 
@@ -247,6 +248,31 @@ def pegar_primeiro_passageiro() -> bool:
     
     return True
 
+def seguir_caminho(pos, obj, ori): #! lidar com outras coisas
+    def interpretar_movimento(mov):
+        if   mov == tipo_movimento.FRENTE:
+            rodas.straight(TAM_BLOCO)
+        elif mov == tipo_movimento.TRAS:
+            rodas.turn(180)
+            rodas.straight(TAM_BLOCO)
+        elif mov == tipo_movimento.ESQUERDA:
+            rodas.turn(-90)
+            rodas.straight(TAM_BLOCO)
+        elif mov == tipo_movimento.DIREITA:
+            rodas.turn(90)
+            rodas.straight(TAM_BLOCO)
+
+    def interpretar_caminho(caminho): #! receber orientação?
+        for mov in caminho: #! yield orientação nova?
+            print(tipo_movimento(mov))
+            interpretar_movimento(mov)
+            yield rodas.distance()
+
+    movs = achar_movimentos(pos, obj, ori)
+    #print(*(tipo_movimento(mov) for mov in movs))
+    for _ in interpretar_caminho(movs):
+        while not rodas.done():
+            pass
 
 def menu_calibracao(hub, sensor_esq, sensor_dir,
                                      botao_parar=Button.BLUETOOTH,
@@ -301,7 +327,7 @@ def main(hub):
     while not achou_azul:
         achou_azul = achar_azul()
     #achar_limite()
-    pegou = pegar_primeiro_passageiro()
+    pegou = pegar_primeiro_passageiro() #! aqui a gente precisa saber a orientação (se é norte/sul|esquerda/direita)
     if pegou:
         dar_meia_volta()
         blt.abrir_garra(hub)
