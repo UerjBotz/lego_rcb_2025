@@ -14,7 +14,8 @@ def setup():
     global garra_fechada
 
     hub = PrimeHub(broadcast_channel=TX_BRACO, observe_channels=[TX_CABECA])
-    
+    print(hub.system.name())
+
     motor_garra = Motor(Port.C)
 
     sensor_cor_frente = ColorSensor(Port.A)

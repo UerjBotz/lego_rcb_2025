@@ -33,6 +33,7 @@ def setup():
     global botao_calibrar, rodas_conf_padrao
     
     hub = PrimeHub(broadcast_channel=blt.TX_CABECA, observe_channels=[blt.TX_BRACO])
+    print(hub.system.name())
 
     hub.display.orientation(Side.BOTTOM)
     hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
@@ -57,13 +58,16 @@ class mudar_velocidade():
     1. mudar a velocidade do robô
     2. restaurar a velocidade do robô
     """
-    def __init__(self, rodas, vel): 
+    def __init__(self, rodas, vel, vel_ang=None): 
         self.rodas = rodas
         self.vel   = vel
+        self.vel_ang = vel_ang
  
     def __enter__(self): 
         self.conf_anterior = self.rodas.settings()
-        _, *conf_resto     = self.conf_anterior
+        [_, *conf_resto]   = self.conf_anterior
+        if self.vel_ang:
+            conf_resto[1] = self.vel_ang
         self.rodas.settings(self.vel, *conf_resto)
         return self
 
@@ -159,43 +163,60 @@ def achar_azul() -> bool:
             rodas.turn(90)
             return False
 
-def alinhar() -> True:
-    while True:
-        esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
+def alinha_parede(vel, vel_ang, giro_max=45) -> bool:
+    alinhado_parede = lambda esq, dir: not cores.pista_unificado(*esq) and not cores.pista_unificado(*dir)
+    alinhado_pista  = lambda esq, dir: cores.pista_unificado(*esq) and cores.pista_unificado(*dir)
 
-        print(f"alinhar: {esq=}, {dir=}")
+    with mudar_velocidade(rodas, vel, vel_ang):
+        parou, extra = andar_ate(ver_nao_pista, dist_max=TAM_BLOCO//2)
+        if not parou:
+            (dist,) = extra
+            print("reto branco", dist)
+            return False # viu só branco, não sabemos se tá alinhado
+    
+        (dir, esq) = extra
+        if  alinhado_parede(esq, dir):
+            print("reto não pista")
+            return True
+        elif not cores.pista_unificado(*dir):
+            print("torto pra direita")
+            GIRO = -giro_max
+        elif not cores.pista_unificado(*esq):
+            print("torto pra esquerda")
+            GIRO = giro_max
 
-        ang_girado = 0.0
-        dist_percorrida = 0.0
-        rodas.straight(TAM_BLOCO/10, wait=False)
-        if rodas.distance() > TAM_BLOCO*4//5:
-            dar_re(rodas.distance())
-            rodas.turn(90)
-            rodas.reset()
+        rodas.turn(GIRO, wait=False) #! fazer gira_ate
+        while not rodas.done():
+            esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
+            print(esq, dir)
+            if  alinhado_parede(esq, dir):
+                print("alinhado parede")
+                parar_girar()
+                return True # deve tar alinhado
+            elif alinhado_pista(esq, dir):
+                print("alinhado pista")
+                parar_girar()
+                return False #provv alinhado, talvez tentar de novo
+        return False # girou tudo, não sabemos se tá alinhado
+
+def alinhar(max_tentativas=3, vel=80, vel_ang=20, giro_max=70) -> None:
+    for _ in range(max_tentativas): #! esqueci mas tem alguma coisa
+        rodas.reset()
+        alinhou = alinha_parede(vel, vel_ang, giro_max=giro_max)
+
+        ang  = rodas.angle()
+        dist = rodas.distance()
+        with mudar_velocidade(rodas, vel, vel_ang):
+            rodas.turn(-ang)
+            dar_re(dist)
+            rodas.turn(ang)
+
+        if alinhou: return
+        else:
+            rodas.turn(90) #! testar agora
             continue
-
-        if not cores.pista_unificado(*esq) or not cores.pista_unificado(*dir):
-            parar()
-            dist_percorrida = rodas.distance()
-            if not cores.pista_unificado(*esq) and not cores.pista_unificado(*dir):
-                print("ENTREI RETO")
-                dar_re(dist_percorrida)
-                return True
-            else:
-                print("ENTREI TORTO")
-                rodas.turn(-90, wait=False)
-                esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
-                if not (cores.pista_unificado(*esq) ^ cores.pista_unificado(*dir)):
-                    print("cor_igual")
-                    parar_girar()
-                    ang_girado = rodas.angle()
-                    rodas.turn(-ang_girado)
-                    dar_re(dist_percorrida)
-                    rodas.turn(ang_girado)
-
-                    rodas.turn(90)
-                    rodas.reset()
-                    return alinhar()
+    return
+        
 
 def pegar_passageiro() -> bool:
     print("pegar passageiro")
@@ -319,11 +340,11 @@ def main(hub):
     hub.system.set_stop_button((Button.BLUETOOTH,))
     bipe_cabeca(hub)
 
+
     #! antes de qualquer coisa, era bom ver se na sua frente tem obstáculo
     #! sobre isso ^ ainda, tem que tomar cuidado pra não confundir eles com os passageiros
-    alinhou = achou_azul = False
-    while not alinhou:
-        alinhou = alinhar()
+    achou_azul = False
+    alinhar()
     while not achou_azul:
         achou_azul = achar_azul()
     #achar_limite()
