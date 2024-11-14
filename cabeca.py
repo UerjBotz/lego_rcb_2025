@@ -109,19 +109,29 @@ def ver_obstaculo():
             dist_esq, dist_dir)
 
 def evitar_obstaculo():
-    rodas.turn(90)
-    viu, *dists = ver_obstaculo()
-    if not viu:
-        print("SEM OBSTACULO")
-        print(dists)
-        rodas.turn(-90)
-    else:
-        print("TEM OBSTACULO")
-        print(dists)
+    distancias_percorridas = []
+    while True:
+        rodas.turn(90)
+        viu, *dists = ver_obstaculo()
+        if not viu:
+            print("SEM OBSTACULO")
+            print(dists)
+            rodas.turn(-90)
+        else:
+            print("TEM OBSTACULO")
+            print(dists)
+            dist_perco = rodas.distance()
+            distancias_percorridas.append(dist_perco)
+            print(f"Distância percorrida até ver obstáculo: {dist_perco} cm")
+            rodas.reset()
 
-    foi_terminado, *dists = andar_ate(ver_obstaculo, dist_max=TAM_BLOCO*4)
-    dist_perco = rodas.distance()
-    print(f"Distância percorrida até ver:{dist_perco}")
+        foi_terminado, *dists = andar_ate(ver_obstaculo, dist_max=TAM_BLOCO*4)
+        if foi_terminado:
+            break
+
+    print("Distâncias percorridas até cada obstáculo detectado:")
+    for i, distancia in enumerate(distancias_percorridas):
+        print(f"Obstáculo {i + 1}: {distancia} cm")
 
 def andar_ate(*conds_parada: Callable, dist_max=TAM_BLOCO*6) -> tuple[bool, Any]: # type: ignore
     rodas.reset()
