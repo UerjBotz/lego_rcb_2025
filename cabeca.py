@@ -133,6 +133,35 @@ def ver_passageiro_perto():
     return ((dist_esq < DIST_PASSAGEIRO_RUA or dist_dir < DIST_PASSAGEIRO_RUA),
             dist_esq, dist_dir)
 
+def ver_obstaculo():
+    recuo = TAM_BLOCO*3//2
+    dist_esq, dist_dir = blt.ver_distancias(hub)
+    return (dist_esq <= recuo or dist_dir <= recuo,
+            dist_esq, dist_dir)
+
+def evitar_obstaculo():
+    distancias_percorridas = []
+    while True:
+        rodas.turn(90)
+        viu, *dists = ver_obstaculo()
+        if not viu:
+            print("SEM OBSTACULO")
+            print(dists)
+        else:
+            print("TEM OBSTACULO")
+            print(dists)
+            dist_perco = rodas.distance()
+            distancias_percorridas.append(dist_perco)
+            print(f"Distância percorrida até ver obstáculo: {dist_perco} cm")
+
+        foi_terminado, *dists = andar_ate(ver_obstaculo, dist_max=TAM_BLOCO*4)
+        if foi_terminado:
+            break
+
+    print("Distâncias percorridas até cada obstáculo detectado:")
+    for i, distancia in enumerate(distancias_percorridas):
+        print(f"Obstáculo {i + 1}: {distancia} cm")
+
 def andar_ate(*conds_parada: Callable, dist_max=TAM_BLOCO*6) -> tuple[bool, tuple[Any]]: # type: ignore
     rodas.reset()
     rodas.straight(dist_max, wait=False)
@@ -379,7 +408,10 @@ def main(hub):
     hub.system.set_stop_button((Button.BLUETOOTH,))
     bipe_cabeca(hub)
 
+    evitar_obstaculo()
+    return
 
+"""
     #! antes de qualquer coisa, era bom ver se na sua frente tem obstáculo
     #! sobre isso ^ ainda, tem que tomar cuidado pra não confundir eles com os passageiros
     achou_azul = False
@@ -414,3 +446,4 @@ def main(hub):
         musica_derrota(hub)
         wait(1000)
         return #! fazer main retornar que nem em c e tocar o som com base nisso
+"""
