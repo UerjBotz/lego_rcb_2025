@@ -29,17 +29,19 @@ DIST_EIXO_SENS_DIST = 45 #mm   #! checar
 
 DIST_PASSAGEIRO_RUA = 220 #! checar
 
+
 #! checar stall: jogar exceção
 #! checar cor errada no azul
 #! tem um lugar começo do achar azul que tem que dar ré
 
+
 def setup():
     global hub, rodas
     global sensor_cor_esq, sensor_cor_dir, sensor_ultra_esq, sensor_ultra_dir
-    global botao_calibrar, ori
+    global botao_calibrar, orientacao_estimada
     global rodas_conf_padrao, vels_padrao, vel_padrao, vel_ang_padrao #! fazer um dicionário e concordar com mudar_velocidade
     
-    ori = ""
+    orientacao_estimada = ""
     hub = PrimeHub(broadcast_channel=blt.TX_CABECA, observe_channels=[blt.TX_BRACO])
     print(hub.system.name())
     while hub.system.name() != "spike1":
@@ -68,7 +70,7 @@ def setup():
     rodas_conf_padrao = rodas.settings() #! CONSTANTIZAR
     vel_padrao =     rodas_conf_padrao[0]
     vel_ang_padrao = rodas_conf_padrao[2]
-    vels_padrao = vels_padrao, vel_ang_padrao
+    vels_padrao = vel_padrao, vel_ang_padrao
 
     return hub
 
@@ -95,11 +97,11 @@ class mudar_velocidade():
         self.rodas.settings(*self.conf_anterior)
 
 def inverte_orientacao():
-    global ori
-    if ori == "N": ori = "S"
-    if ori == "S": ori = "N"
-    if ori == "L": ori = "O"
-    if ori == "O": ori = "L"
+    global orientacao_estimada
+    if orientacao_estimada == "N": orientacao_estimada = "S"
+    if orientacao_estimada == "S": orientacao_estimada = "N"
+    if orientacao_estimada == "L": orientacao_estimada = "O"
+    if orientacao_estimada == "O": orientacao_estimada = "L"
 
 def ler_ultrassons():
     return sensor_ultra_esq.distance(), sensor_ultra_dir.distance()
@@ -109,19 +111,21 @@ def dar_meia_volta():
     rodas.turn(180)
     
 def virar_direita():
-    global ori
-    if   ori == "N": ori = "L"
-    elif ori == "S": ori = "O"
-    elif ori == "L": ori = "S"
-    elif ori == "O": ori = "N"
+    global orientacao_estimada
+    if   orientacao_estimada == "N": orientacao_estimada = "L"
+    elif orientacao_estimada == "S": orientacao_estimada = "O"
+    elif orientacao_estimada == "L": orientacao_estimada = "S"
+    elif orientacao_estimada == "O": orientacao_estimada = "N"
+
     rodas.turn(90)
 
 def virar_esquerda():
-    global ori
-    if ori == "N": ori = "O"
-    elif ori == "S": ori = "L"
-    elif ori == "L": ori = "N"
-    elif ori == "O": ori = "S"
+    global orientacao_estimada
+    if   orientacao_estimada == "N": orientacao_estimada = "O"
+    elif orientacao_estimada == "S": orientacao_estimada = "L"
+    elif orientacao_estimada == "L": orientacao_estimada = "N"
+    elif orientacao_estimada == "O": orientacao_estimada = "S"
+
     rodas.turn(-90)
 
 DIST_PARAR=-0.4
@@ -162,13 +166,13 @@ def verificar_cor(func_cor) -> Callable[None, tuple[bool, int]]: # type: ignore
     return f
 
 def ver_passageiro_perto():
-    print("ver_passageiro_perto")
+    #print("ver_passageiro_perto")
     dist_esq, dist_dir = ler_ultrassons()
     return ((dist_esq < DIST_PASSAGEIRO_RUA or dist_dir < DIST_PASSAGEIRO_RUA),
             dist_esq, dist_dir)
 
 def nao_ver_passageiro_perto():
-    print("nao_ver_passageiro_perto")
+    #print("nao_ver_passageiro_perto")
     dist_esq, dist_dir = ler_ultrassons()
     return ((dist_esq < DIST_PASSAGEIRO_RUA and dist_dir < DIST_PASSAGEIRO_RUA),
             dist_esq, dist_dir)
@@ -279,7 +283,7 @@ def alinha_parede(vel, vel_ang, giro_max=45) -> bool:
         parou, extra = andar_ate_idx(ver_nao_pista, dist_max=TAM_BLOCO//2)
         if not parou:
             (dist,) = extra
-            print("reto branco", dist)
+            print(f"reto branco {dist}")
             return False # viu só branco, não sabemos se tá alinhado
     
         (dir, esq) = extra
@@ -327,7 +331,7 @@ def alinhar(max_tentativas=4, virar=True, vel=80, vel_ang=20, giro_max=70) -> No
         
 
 def pegar_passageiro() -> bool:
-    global ori
+    global orientacao_estimada
 
     print("pegar_passageiro:")
     with mudar_velocidade(rodas, 50):
@@ -385,7 +389,7 @@ def pegar_passageiro() -> bool:
             return False # chegou na distância máxima
 
 def pegar_primeiro_passageiro() -> Color:
-    global ori
+    global orientacao_estimada
     print("pegar_primeiro_passageiro")
     #! a cor é pra ser azul
     virar_direita()
@@ -403,19 +407,19 @@ def pegar_primeiro_passageiro() -> Color:
     
     return blt.ver_cor_passageiro(hub)
 
-def seguir_caminho(pos, obj, ori): #! lidar com outras coisas
+def seguir_caminho(pos, obj): #! lidar com outras coisas
     def interpretar_movimento(mov):
         if   mov == tipo_movimento.FRENTE:
-            rodas.straight(TAM_BLOCO)
+            rodas.straight(TAM_BLOCO, then=Stop.COAST)
         elif mov == tipo_movimento.TRAS:
             dar_meia_volta()
-            rodas.straight(TAM_BLOCO)
+            rodas.straight(TAM_BLOCO, then=Stop.COAST)
         elif mov == tipo_movimento.ESQUERDA_FRENTE:
             virar_esquerda()
-            rodas.straight(TAM_BLOCO)
+            rodas.straight(TAM_BLOCO, then=Stop.COAST)
         elif mov == tipo_movimento.DIREITA_FRENTE:
             virar_direita()
-            rodas.straight(TAM_BLOCO)
+            rodas.straight(TAM_BLOCO, then=Stop.COAST)
         elif mov == tipo_movimento.ESQUERDA:
             virar_esquerda()
         elif mov == tipo_movimento.DIREITA:
@@ -427,13 +431,14 @@ def seguir_caminho(pos, obj, ori): #! lidar com outras coisas
             interpretar_movimento(mov)
             yield rodas.distance()
 
-    movs, ori_final = achar_movimentos(pos, obj, ori)
+    movs, ori_final = achar_movimentos(pos, obj, orientacao_estimada)
     #print(*(tipo_movimento(mov) for mov in movs))
 
     for _ in interpretar_caminho(movs):
         while not rodas.done(): pass
         
-    while ori != ori_final:
+    while orientacao_estimada != ori_final:
+        print(f"{orientacao_estimada=}, {ori_final=}")
         virar_direita()
 
 def menu_calibracao(hub, sensor_esq, sensor_dir,
@@ -468,7 +473,7 @@ def menu_calibracao(hub, sensor_esq, sensor_dir,
 
 
 def main(hub):
-    global ori
+    global orientacao_estimada
 
     crono = StopWatch()
     while crono.time() < 100: #! ativar calibração quando for usar
@@ -489,21 +494,20 @@ def main(hub):
     alinhar()
     while not achou_azul:
         achou_azul = achar_azul()
-    print(f"{ori=}") #assert ori == "L"
-    ori = "L"
+    print(f"{orientacao_estimada=}") #assert ori == "L"
+    orientacao_estimada = "L"
     cor = pegar_primeiro_passageiro()
-    
+
     achar_limite(); alinha_limite() #! lidar com os casos de cada visto (andar_ate[...])
 
     #! comprimir esses ifs com com posicao_desembarque_adulto.get()
     #! verificar tamanho do passageiro e funcao p verificar se desembarque disponivel
-    if   cor == cores.cor.VERDE:    fim = posicao_desembarque_adulto['VERDE'][0]
-    elif cor == cores.cor.VERMELHO: fim = posicao_desembarque_adulto['VERMELHO'][0]
-    elif cor == cores.cor.AZUL:     fim = posicao_desembarque_adulto['AZUL'][0]
-    elif cor == cores.cor.MARROM:
-       fim = posicao_desembarque_adulto['MARROM'][0]
+    if   cor == cores.cor.VERDE:    fim = posicao_desembarque_adulto['VERDE']
+    elif cor == cores.cor.VERMELHO: fim = posicao_desembarque_adulto['VERMELHO']
+    elif cor == cores.cor.AZUL:     fim = posicao_desembarque_adulto['AZUL']
+    elif cor == cores.cor.MARROM:   fim = posicao_desembarque_adulto['MARROM'] #! fazer acontecer
     else: #! marrom
-        fim = posicao_desembarque_adulto['MARROM'][0]
+        fim = posicao_desembarque_adulto['MARROM']
         print(f"{cores.cor(cor)}")
         assert False
 
@@ -512,15 +516,20 @@ def main(hub):
     achar_limite(); alinha_limite() #! lidar com os casos de cada visto (andar_ate[...])
     #! aqui é pra ser vermelho
 
-    if   ori == "N": pos = (0,5)
-    elif ori == "S": pos = (4,5)
+    if   orientacao_estimada == "N": pos = (0,5)
+    elif orientacao_estimada == "S": pos = (4,5)
     else:
-        print(f"{ori=}")
+        print(f"{orientacao_estimada=}")
         assert False
 
-    seguir_caminho(pos, fim, ori)
+    seguir_caminho(pos, fim)
+
     rodas.straight(TAM_BLOCO//2)
     blt.abrir_garra(hub)
     dar_re(TAM_BLOCO//2)
-    main(hub) #!
-    musica_vitoria(hub)
+
+    try:
+        main(hub) #! fazer loop em vez de recursar
+    except:
+        musica_vitoria(hub)
+        musica_derrota(hub)

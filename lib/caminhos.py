@@ -8,18 +8,18 @@ tipo_parede = Enum("tipo_parede", ["PAREDE",
                                    "ENTRADA",
                                    "ENTRADA_COM_CANO"])
 
-posicao_parede = Enum("posicao_parede", ["N", "S", "L", "O"])
+posicao_parede = Enum("posicao_parede", ["N", "L", "S", "O"])
 
 posicao_desembarque_adulto = {
-    "AZUL": ((4, 2)),
-    "VERDE": ((2, 4)),
+    "AZUL":     ((4, 2)),
+    "VERDE":    ((2, 4)),
     "VERMELHO": ((2, 2)),
-    "MARROM": ((0, 2)),
+    "MARROM":   ((0, 2)),
 }
 
 posicao_desembarque_crianca = {
-    "AZUL": ((0, 4)),
-    "VERDE": ((0, 0), (2, 0), (4, 0)),
+    "AZUL":   ((0, 4)),
+    "VERDE":  ((0, 0), (2, 0), (4, 0)),
     "MARROM": ((4, 4)),
 }
 
@@ -77,42 +77,82 @@ def coloca_passageiro(edificio: Edificio, entrada: str): #ver como faz para esco
 bakery = Edificio(
     nome = "BAKERY",
     cor = cor.MARROM,
-    paredes = [tipo_parede.PAREDE, tipo_parede.ENTRADA, tipo_parede.PAREDE, tipo_parede.ENTRADA]
+    paredes = {
+        posicao_parede.N: tipo_parede.PAREDE,
+        posicao_parede.S: tipo_parede.ENTRADA,
+        posicao_parede.L: tipo_parede.PAREDE,
+        posicao_parede.O: tipo_parede.ENTRADA
+    }
 )
 school = Edificio(
     nome = "SCHOOL",
     cor = cor.AZUL,
-    paredes = [tipo_parede.PAREDE, tipo_parede.ENTRADA, tipo_parede.PAREDE, tipo_parede.ENTRADA]
+    paredes = {
+        posicao_parede.N: tipo_parede.PAREDE,
+        posicao_parede.S: tipo_parede.ENTRADA,
+        posicao_parede.L: tipo_parede.PAREDE,
+        posicao_parede.O: tipo_parede.ENTRADA
+    }
 )
 drugstore = Edificio(
     nome = "DRUGSTORE",
     cor = cor.VERMELHO,
-    paredes = [tipo_parede.PAREDE, tipo_parede.PAREDE, tipo_parede.ENTRADA, tipo_parede.ENTRADA]
+    paredes = {
+        posicao_parede.N: tipo_parede.PAREDE,
+        posicao_parede.S: tipo_parede.PAREDE,
+        posicao_parede.L: tipo_parede.ENTRADA,
+        posicao_parede.O: tipo_parede.ENTRADA
+    }
 )
 city_hall = Edificio(
     nome = "CITY HALL",
     cor = cor.VERDE,
-    paredes = [tipo_parede.ENTRADA, tipo_parede.ENTRADA, tipo_parede.PAREDE, tipo_parede.PAREDE]
+    paredes = {
+        posicao_parede.N: tipo_parede.ENTRADA,
+        posicao_parede.S: tipo_parede.ENTRADA,
+        posicao_parede.L: tipo_parede.PAREDE,
+        posicao_parede.O: tipo_parede.PAREDE
+    }
 )
 museum = Edificio(
     nome = "MUSEUM",
     cor = cor.AZUL,
-    paredes = [tipo_parede.ENTRADA, tipo_parede.PAREDE, tipo_parede.ENTRADA, tipo_parede.PAREDE]
+    paredes = {
+        posicao_parede.N: tipo_parede.ENTRADA,
+        posicao_parede.S: tipo_parede.PAREDE,
+        posicao_parede.L: tipo_parede.ENTRADA,
+        posicao_parede.O: tipo_parede.PAREDE
+    }
 )
 library = Edificio(
     nome = "LIBRARY",
     cor = cor.VERMELHO,
-    paredes = [tipo_parede.ENTRADA, tipo_parede.PAREDE, tipo_parede.ENTRADA, tipo_parede.PAREDE]
+    paredes = {
+        posicao_parede.N: tipo_parede.ENTRADA,
+        posicao_parede.S: tipo_parede.PAREDE,
+        posicao_parede.L: tipo_parede.ENTRADA,
+        posicao_parede.O: tipo_parede.PAREDE
+    }
 )
 park_aberto = lambda: Edificio(
     nome = "PARK",
     cor = cor.VERDE,
-    paredes = [tipo_parede.PAREDE, tipo_parede.PAREDE, tipo_parede.ENTRADA, tipo_parede.PAREDE]
+    paredes = {
+        posicao_parede.N: tipo_parede.PAREDE,
+        posicao_parede.S: tipo_parede.PAREDE,
+        posicao_parede.L: tipo_parede.ENTRADA,
+        posicao_parede.O: tipo_parede.PAREDE
+    }
 )
 park_fechado = lambda: Edificio(
     nome = "PARK",
     cor = cor.VERDE,
-    paredes = [tipo_parede.PAREDE, tipo_parede.PAREDE, tipo_parede.PAREDE, tipo_parede.PAREDE]
+    paredes = {
+        posicao_parede.N: tipo_parede.PAREDE,
+        posicao_parede.S: tipo_parede.PAREDE,
+        posicao_parede.L: tipo_parede.PAREDE,
+        posicao_parede.O: tipo_parede.PAREDE
+    }
 )
 #! ver se lambdar os outros também
 
@@ -160,7 +200,7 @@ def heuristica(src, dest):
     return dist_manhatan(src, dest)
 
 # Trace the path from source to destination
-def trace_path(info_celulas, dest):
+def tracar_caminho(info_celulas, dest):
     print("The Path is ")
     path = []
     row, col = dest
@@ -179,6 +219,7 @@ def trace_path(info_celulas, dest):
     path.reverse()
 
     # Print the path
+    print("tracar_caminho:", end=' ')
     for i in path:
         print("->", i, end=" ")
     print()
@@ -187,20 +228,22 @@ def trace_path(info_celulas, dest):
 
 # Implement the A* search algorithm
 def a_estrela(grid, src, dest):
-    # Check if the source and destination are valid
-    if not dentro_dos_limites(grid, src) or not dentro_dos_limites(grid, dest):
-        print("Source or destination is invalid")
-        return
+    ok = True
+    if not dentro_dos_limites(grid, src):
+        ok = False; print(f"a_estrela: origem inválida {src}")
+    if not dentro_dos_limites(grid, dest):
+        ok = False; print(f"a_estrela: destino inválido {dest}")
 
-    # Check if the source and destination are unblocked
-    if not celula_livre(grid, src) or not celula_livre(grid, dest):
-        print("Source or the destination is blocked")
-        return
+    if not celula_livre(grid, src):
+        ok = False; print(f"a_estrela: origem bloqueada {src}")
+    if not celula_livre(grid, dest):
+        ok = False; print(f"a_estrela: destino bloqueado {dest}")
+
+    if not ok: return None
 
     # Check if we are already at the destination
     if eh_destino(src, dest):
-        print("We are already at the destination")
-        return
+        print(f"a_estrela: já no destino {src, dest}"); return []
 
     ROW = len(grid)
     COL = len(grid[0])
@@ -248,11 +291,9 @@ def a_estrela(grid, src, dest):
                     # Set the parent of the destination cell
                     info_celulas[new_i][new_j].i_pai = i
                     info_celulas[new_i][new_j].j_pai = j
-                    print("The destination cell is found")
+                    print("a_estrela: caminho encontrado")
                     # Trace and print the path from source to destination
-                    return trace_path(info_celulas, dest)
-                    # achou_dest = True
-                    # return
+                    return tracar_caminho(info_celulas, dest)
                 else:
                     # Calculate the new f, g, and h values
                     g_new = info_celulas[i][j].g + 1.0
@@ -272,7 +313,9 @@ def a_estrela(grid, src, dest):
 
     # If the destination is not found after visiting all cells
     if not achou_dest:
-        print("Failed to find the destination cell")
+        print("a_estrela: não achou")
+
+    return None
 
 #funcao que recebe lista de posicoes na matriz e transforma em lista de direcoes
 def caminho_relativo(caminho_absoluto: list[tuple[int, int]]):
@@ -289,7 +332,7 @@ def caminho_relativo(caminho_absoluto: list[tuple[int, int]]):
         dx = caminho_absoluto[i][0] - caminho_absoluto[i - 1][0]
         dy = caminho_absoluto[i][1] - caminho_absoluto[i - 1][1]
 
-        if dx == 0 and dy == 1:
+        if   dx == 0 and dy == 1:
             direcoes.append(direita)
         elif dx == 1 and dy == 0:
             direcoes.append(baixo)
@@ -300,74 +343,73 @@ def caminho_relativo(caminho_absoluto: list[tuple[int, int]]):
 
     return direcoes #! checar no chamador se é vazio
 
-#orientação = N | S | L | O
 tipo_movimento = Enum("tipo_movimento",
                       ["FRENTE", "DIREITA_FRENTE", "ESQUERDA_FRENTE", "TRAS", "DIREITA", "ESQUERDA"])
 
-def movimento_relativo(relativo, orientacao):
-    orientacoes = ["N", "L", "S", "O"]
-    idx_orientacao = orientacoes.index(orientacao)
-    # print(idx_orientacao)
-    nova_orientacao = orientacao
-    
-    caminho_relativo = relativo.copy()
+def prox_movimento(ori_ini: tipo_movimento, ori_final: tipo_movimento): #type: ignore
+        diferenca = (ori_final - ori_ini) % 4
+        if   diferenca == 0: return tipo_movimento.FRENTE
+        elif diferenca == 1: return tipo_movimento.DIREITA_FRENTE
+        elif diferenca == 2: return tipo_movimento.TRAS
+        elif diferenca == 3: return tipo_movimento.ESQUERDA_FRENTE
+        else:
+            assert False
+
+def movimento_relativo(cam_rel, orientacao_ini):
+    idx_orientacao = posicao_parede[orientacao_ini]
+    nova_orientacao = orientacao_ini
+
+    caminho_relativo = cam_rel.copy()
     caminho_relativo.pop(0)
-    
+
     movimentos = []
     for movimento in caminho_relativo:
-        if   movimento == (0, 1):  # direita
-            nova_orientacao = "L"
-        elif movimento == (1, 0):  # baixo
-            nova_orientacao = "S"
-        elif movimento == (0, -1):  # esquerda
-            nova_orientacao = "O"
-        elif movimento == (-1, 0):  # cima
-            nova_orientacao = "N"
+        if   movimento == ( 0, 1): nova_orientacao = "L"
+        elif movimento == ( 1, 0): nova_orientacao = "S"
+        elif movimento == ( 0,-1): nova_orientacao = "O"
+        elif movimento == (-1, 0): nova_orientacao = "N"
 
-        nova_idx_orientacao = orientacoes.index(nova_orientacao)
-        diferenca = (nova_idx_orientacao - idx_orientacao) % 4
+        nova_idx_orientacao = posicao_parede[nova_orientacao]
 
-        if   diferenca == 0:
-            movimentos.append(tipo_movimento.FRENTE)
-        elif diferenca == 1:
-            movimentos.append(tipo_movimento.DIREITA_FRENTE)
-        elif diferenca == 2:
-            movimentos.append(tipo_movimento.TRAS)
-        elif diferenca == 3:
-            movimentos.append(tipo_movimento.ESQUERDA_FRENTE)
+        movimentos.append(
+            prox_movimento(idx_orientacao, nova_idx_orientacao)
+        )
 
         idx_orientacao = nova_idx_orientacao
 
     return movimentos
 
 
-
 def achar_movimentos(pos_ini, pos_fim, orientacao):
     lin, col = pos_fim
     
     try: #! checar se precisa (se sim, resolver)
-        indice = next((i for i, valor in enumerate(mapa[lin][col].paredes) if valor == tipo_parede.ENTRADA))
+        indice = next((i for i, valor in mapa[lin][col].paredes.items() if valor == tipo_parede.ENTRADA))
+        print(f"{indice=}")
     except Exception as e: #!
-        print(e)
+        print(f"achar_movimentos: {e}")
         indice = None
 
     if indice is None:
-        print("Não há entradas disponíveis")
+        print("achar_movimentos: não há entradas disponíveis")
         return []
     
     orientacao_final = None
-    if posicao_parede(indice) == posicao_parede.N:
-        pos_fim = pos_fim[lin+1][col]
+    if   indice == posicao_parede.N:
+        pos_fim = (lin-1, col)
         orientacao_final = "S"
-    elif posicao_parede(indice) == posicao_parede.S:
-        pos_fim = pos_fim[lin-1][col]
+    elif indice == posicao_parede.S:
+        pos_fim = (lin+1, col)
         orientacao_final = "N"
-    elif posicao_parede(indice) == posicao_parede.L:
-        pos_fim = pos_fim[lin][col+1]
+    elif indice == posicao_parede.L:
+        pos_fim = (lin, col+1)
         orientacao_final = "O"
-    elif posicao_parede(indice) == posicao_parede.O:
-        pos_fim = pos_fim[lin][col-1]
+    elif indice == posicao_parede.O:
+        pos_fim = (lin, col-1)
         orientacao_final = "L"
+    else:
+        print(f"achar_movimentos: {indice=}: {pos_ini=}, {pos_fim=}. {orientacao=}, {orientacao_final=}")
+        assert False
     
     caminho     = a_estrela(mapa, pos_ini, pos_fim)
     caminho_rel = caminho_relativo(caminho)
