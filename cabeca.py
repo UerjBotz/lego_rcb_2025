@@ -7,7 +7,7 @@ from pybricks.tools      import wait, StopWatch
 from pybricks.robotics   import DriveBase
 
 from lib.bipes     import bipe_calibracao, bipe_cabeca, musica_vitoria, musica_derrota
-from lib.caminhos  import achar_movimentos, tipo_movimento
+from lib.caminhos  import achar_movimentos, tipo_movimento, posicao_desembarque_adulto
 
 from urandom import choice
 
@@ -490,14 +490,20 @@ def main(hub):
     while not achou_azul:
         achou_azul = achar_azul()
     print(f"{ori=}") #assert ori == "L"
-    ori = "L" 
+    ori = "L"
     cor = pegar_primeiro_passageiro()
     
     achar_limite(); alinha_limite() #! lidar com os casos de cada visto (andar_ate[...])
-    if   cor == cores.cor.VERDE:    fim = (2,4)
-    elif cor == cores.cor.VERMELHO: fim = (2,2)
-    elif cor == cores.cor.AZUL:     fim = (0,4)
+
+    #! comprimir esses ifs com com posicao_desembarque_adulto.get()
+    #! verificar tamanho do passageiro e funcao p verificar se desembarque disponivel
+    if   cor == cores.cor.VERDE:    fim = posicao_desembarque_adulto['VERDE'][0]
+    elif cor == cores.cor.VERMELHO: fim = posicao_desembarque_adulto['VERMELHO'][0]
+    elif cor == cores.cor.AZUL:     fim = posicao_desembarque_adulto['AZUL'][0]
+    elif cor == cores.cor.MARROM:
+       fim = posicao_desembarque_adulto['MARROM'][0]
     else: #! marrom
+        fim = posicao_desembarque_adulto['MARROM'][0]
         print(f"{cores.cor(cor)}")
         assert False
 
@@ -515,6 +521,6 @@ def main(hub):
     seguir_caminho(pos, fim, ori)
     rodas.straight(TAM_BLOCO//2)
     blt.abrir_garra(hub)
-    rodas.straight(-TAM_BLOCO//2)
+    dar_re(TAM_BLOCO//2)
     main(hub) #!
     musica_vitoria(hub)
