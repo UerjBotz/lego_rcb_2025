@@ -217,12 +217,6 @@ def tracar_caminho(info_celulas, dest):
     path.append((row, col))
     # Reverse the path to get the path from source to destination
     path.reverse()
-
-    # Print the path
-    print("tracar_caminho:", end=' ')
-    for i in path:
-        print("->", i, end=" ")
-    print()
     
     return path
 
@@ -383,13 +377,9 @@ def movimento_relativo(cam_rel, orientacao_ini):
 def achar_movimentos(pos_ini, pos_fim, orientacao):
     lin, col = pos_fim
     
-    try: #! checar se precisa (se sim, resolver)
-        indice = next((i for i, valor in mapa[lin][col].paredes.items() if valor == tipo_parede.ENTRADA))
-        print(f"{indice=}")
-    except Exception as e: #!
-        print(f"achar_movimentos: {e}")
-        indice = None
-
+    indice = next((i for i, valor in mapa[lin][col].paredes.items() if valor == tipo_parede.ENTRADA))
+    print(f"achar_movimentos: {indice=}")
+    
     if indice is None:
         print("achar_movimentos: não há entradas disponíveis")
         return []
@@ -398,20 +388,26 @@ def achar_movimentos(pos_ini, pos_fim, orientacao):
     if   indice == posicao_parede.N:
         pos_fim = (lin-1, col)
         orientacao_final = "S"
+        print(f"achar_movimentos: pos_parede=N: {indice=}, {orientacao_final=}")
     elif indice == posicao_parede.S:
         pos_fim = (lin+1, col)
         orientacao_final = "N"
+        print(f"achar_movimentos: pos_parede=S: {indice=}, {orientacao_final=}")
     elif indice == posicao_parede.L:
         pos_fim = (lin, col+1)
         orientacao_final = "O"
+        print(f"achar_movimentos: pos_parede=O: {indice=}, {orientacao_final=}")
     elif indice == posicao_parede.O:
         pos_fim = (lin, col-1)
         orientacao_final = "L"
+        print(f"achar_movimentos: pos_parede=L: {indice=}, {orientacao_final=}")
     else:
         print(f"achar_movimentos: {indice=}: {pos_ini=}, {pos_fim=}. {orientacao=}, {orientacao_final=}")
         assert False
     
     caminho     = a_estrela(mapa, pos_ini, pos_fim)
+    print("achar_movimentos:", *caminho, sep=" -> ")
     caminho_rel = caminho_relativo(caminho)
+    print(f"achar_movimentos: {caminho_rel=}")
 
     return (movimento_relativo(caminho_rel, orientacao), orientacao_final) #! tratar orientação final None e caminho vazio no chamador

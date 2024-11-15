@@ -1,4 +1,4 @@
-from lib.bipes import bipe_inicio, bipe_final
+from lib.bipes import bipe_inicio, bipe_final, bipe_falha
 
 ID = None     if False  else ID # pyright: ignore
 id = ID.TESTE if not ID else id # pyright: ignore
@@ -16,9 +16,15 @@ elif id == ID.BRACO:
     hub = braco.setup()
     print(hub.battery.voltage())
 
-    bipe_inicio(hub)
-    braco.main(hub)
-    bipe_final(hub)
+    while True:
+        try:
+            bipe_inicio(hub)
+            braco.main()
+            bipe_final(hub)
+        except Exception as e:
+            bipe_falha(hub)
+            print(f"{e}")
+            continue
 
 elif id == ID.TESTE:
     from pybricks.hubs import PrimeHub

@@ -117,6 +117,7 @@ def virar_direita():
     elif orientacao_estimada == "L": orientacao_estimada = "S"
     elif orientacao_estimada == "O": orientacao_estimada = "N"
 
+    print(f"virar_direita: {orientacao_estimada=}")
     rodas.turn(90)
 
 def virar_esquerda():
@@ -126,6 +127,7 @@ def virar_esquerda():
     elif orientacao_estimada == "L": orientacao_estimada = "N"
     elif orientacao_estimada == "O": orientacao_estimada = "S"
 
+    print(f"virar_esquerda: {orientacao_estimada=}")
     rodas.turn(-90)
 
 DIST_PARAR=-0.4
@@ -283,18 +285,18 @@ def alinha_parede(vel, vel_ang, giro_max=45) -> bool:
         parou, extra = andar_ate_idx(ver_nao_pista, dist_max=TAM_BLOCO//2)
         if not parou:
             (dist,) = extra
-            print(f"reto branco {dist}")
+            print(f"alinha_parede: reto branco {dist}")
             return False # viu só branco, não sabemos se tá alinhado
     
         (dir, esq) = extra
         if  alinhado_parede(esq, dir):
-            print("reto não pista")
+            print("alinha_parede: reto não pista")
             return True
         elif not cores.pista_unificado(*dir):
-            print("torto pra direita")
+            print("alinha_parede: torto pra direita")
             GIRO = -giro_max
         elif not cores.pista_unificado(*esq):
-            print("torto pra esquerda")
+            print("alinha_parede: torto pra esquerda")
             GIRO = giro_max
 
         rodas.turn(GIRO, wait=False) #! fazer gira_ate
@@ -302,11 +304,11 @@ def alinha_parede(vel, vel_ang, giro_max=45) -> bool:
             esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
             print(esq, dir)
             if  alinhado_parede(esq, dir):
-                print("alinhado parede")
+                print("alinha_parede: alinhado parede")
                 parar_girar()
                 return True # deve tar alinhado
             elif alinhado_pista(esq, dir):
-                print("alinhado pista")
+                print("alinha_parede: alinhado pista")
                 parar_girar()
                 return False #provv alinhado, talvez tentar de novo
         return False # girou tudo, não sabemos se tá alinhado
@@ -390,7 +392,7 @@ def pegar_passageiro() -> bool:
 
 def pegar_primeiro_passageiro() -> Color:
     global orientacao_estimada
-    print("pegar_primeiro_passageiro")
+    print("pegar_primeiro_passageiro:")
     #! a cor é pra ser azul
     virar_direita()
     deu, _ = andar_ate_bool(verificar_cor(cores.beco_unificado),
@@ -427,7 +429,7 @@ def seguir_caminho(pos, obj): #! lidar com outras coisas
 
     def interpretar_caminho(caminho): #! receber orientação?
         for mov in caminho: #! yield orientação nova?
-            print(tipo_movimento(mov))
+            print(f"seguir_caminho: {tipo_movimento(mov)}")
             interpretar_movimento(mov)
             yield rodas.distance()
 
@@ -486,50 +488,48 @@ def main(hub):
             return
 
     hub.system.set_stop_button((Button.BLUETOOTH,))
-    bipe_cabeca(hub)
+    while True:
+        bipe_cabeca(hub)
 
-    #! antes de qualquer coisa, era bom ver se na sua frente tem obstáculo
-    #! sobre isso ^ ainda, tem que tomar cuidado pra não confundir eles com os passageiros
-    achou_azul = False
-    alinhar()
-    while not achou_azul:
-        achou_azul = achar_azul()
-    print(f"{orientacao_estimada=}") #assert ori == "L"
-    orientacao_estimada = "L"
-    cor = pegar_primeiro_passageiro()
+        #! antes de qualquer coisa, era bom ver se na sua frente tem obstáculo
+        #! sobre isso ^ ainda, tem que tomar cuidado pra não confundir eles com os passageiros
+        achou_azul = False
+        alinhar()
+        while not achou_azul:
+            achou_azul = achar_azul()
+        print(f"{orientacao_estimada=}") #assert ori == "L"
+        orientacao_estimada = "L"
+        cor = pegar_primeiro_passageiro()
 
-    achar_limite(); alinha_limite() #! lidar com os casos de cada visto (andar_ate[...])
+        achar_limite(); alinha_limite() #! lidar com os casos de cada visto (andar_ate[...])
 
-    #! comprimir esses ifs com com posicao_desembarque_adulto.get()
-    #! verificar tamanho do passageiro e funcao p verificar se desembarque disponivel
-    if   cor == cores.cor.VERDE:    fim = posicao_desembarque_adulto['VERDE']
-    elif cor == cores.cor.VERMELHO: fim = posicao_desembarque_adulto['VERMELHO']
-    elif cor == cores.cor.AZUL:     fim = posicao_desembarque_adulto['AZUL']
-    elif cor == cores.cor.MARROM:   fim = posicao_desembarque_adulto['MARROM'] #! fazer acontecer
-    else: #! marrom
-        fim = posicao_desembarque_adulto['MARROM']
-        print(f"{cores.cor(cor)}")
-        assert False
+        #! comprimir esses ifs com com posicao_desembarque_adulto.get()
+        #! verificar tamanho do passageiro e funcao p verificar se desembarque disponivel
+        if   cor == cores.cor.VERDE:    fim = posicao_desembarque_adulto['VERDE']
+        elif cor == cores.cor.VERMELHO: fim = posicao_desembarque_adulto['VERMELHO']
+        elif cor == cores.cor.AZUL:     fim = posicao_desembarque_adulto['AZUL']
+        elif cor == cores.cor.MARROM:   fim = posicao_desembarque_adulto['MARROM'] #! fazer acontecer
+        else: #! marrom
+            fim = posicao_desembarque_adulto['MARROM']
+            print(f"{cores.cor(cor)}")
+            assert False
 
-    dar_re(TAM_BLOCO//3) #! desmagificar
-    choice((virar_esquerda, virar_direita))()
-    achar_limite(); alinha_limite() #! lidar com os casos de cada visto (andar_ate[...])
-    #! aqui é pra ser vermelho
+        dar_re(TAM_BLOCO//3) #! desmagificar
+        choice((virar_esquerda, virar_direita))()
+        achar_limite(); alinha_limite() #! lidar com os casos de cada visto (andar_ate[...])
+        #! aqui é pra ser vermelho
+        dar_re_meio_bloco()
 
-    if   orientacao_estimada == "N": pos = (0,5)
-    elif orientacao_estimada == "S": pos = (4,5)
-    else:
-        print(f"{orientacao_estimada=}")
-        assert False
+        if   orientacao_estimada == "N": pos = (0,5)
+        elif orientacao_estimada == "S": pos = (4,5)
+        else:
+            print(f"{orientacao_estimada=}")
+            assert False
 
-    seguir_caminho(pos, fim)
+        seguir_caminho(pos, fim)
 
-    rodas.straight(TAM_BLOCO//2)
-    blt.abrir_garra(hub)
-    dar_re(TAM_BLOCO//2)
+        rodas.straight(TAM_BLOCO//2)
+        blt.abrir_garra(hub)
+        dar_re(TAM_BLOCO//2)
 
-    try:
-        main(hub) #! fazer loop em vez de recursar
-    except:
-        musica_vitoria(hub)
-        musica_derrota(hub)
+        seguir_caminho(fim, pos)
