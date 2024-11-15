@@ -130,6 +130,10 @@ def virar_esquerda():
     print(f"virar_esquerda: {orientacao_estimada=}")
     rodas.turn(-90)
 
+def muda_orientação(ori_final):
+    while orientacao_estimada != ori_final:
+        virar_esquerda()
+
 DIST_PARAR=-0.4
 def parar():
     rodas.straight(DIST_PARAR)
@@ -438,10 +442,8 @@ def seguir_caminho(pos, obj): #! lidar com outras coisas
 
     for _ in interpretar_caminho(movs):
         while not rodas.done(): pass
-        
-    while orientacao_estimada != ori_final:
-        print(f"{orientacao_estimada=}, {ori_final=}")
-        virar_direita()
+    
+    mudar_orientação(ori_final)
 
 def menu_calibracao(hub, sensor_esq, sensor_dir,
                                      botao_parar=Button.BLUETOOTH,
