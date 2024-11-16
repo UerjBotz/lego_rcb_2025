@@ -201,7 +201,6 @@ def heuristica(src, dest):
 
 # Trace the path from source to destination
 def tracar_caminho(info_celulas, dest):
-    print("The Path is ")
     path = []
     row, col = dest
 
@@ -315,7 +314,7 @@ def a_estrela(grid, src, dest):
 def caminho_relativo(caminho_absoluto: list[tuple[int, int]]):
     if caminho_absoluto is None:
         caminho_absoluto = []
-        print("Caminho Errado")
+        print("caminho_relativo: Caminho Errado")
 
     #movimentos
     direita = (0, 1); baixo = (1, 0); esquerda = (0, -1); cima = (-1, 0)
@@ -374,40 +373,41 @@ def movimento_relativo(cam_rel, orientacao_ini):
     return movimentos
 
 
-def achar_movimentos(pos_ini, pos_fim, orientacao):
+def achar_movimentos(pos_ini, pos_fim, orientacao): #! separar a parte de achar a pos_final
     lin, col = pos_fim
     
-    indice = next((i for i, valor in mapa[lin][col].paredes.items() if valor == tipo_parede.ENTRADA))
-    print(f"achar_movimentos: {indice=}")
-    
-    if indice is None:
-        print("achar_movimentos: não há entradas disponíveis")
-        return []
-    
     orientacao_final = None
-    if   indice == posicao_parede.N:
-        pos_fim = (lin-1, col)
-        orientacao_final = "S"
-        print(f"achar_movimentos: pos_parede=N: {indice=}, {orientacao_final=}")
-    elif indice == posicao_parede.S:
-        pos_fim = (lin+1, col)
-        orientacao_final = "N"
-        print(f"achar_movimentos: pos_parede=S: {indice=}, {orientacao_final=}")
-    elif indice == posicao_parede.L:
-        pos_fim = (lin, col+1)
-        orientacao_final = "O"
-        print(f"achar_movimentos: pos_parede=O: {indice=}, {orientacao_final=}")
-    elif indice == posicao_parede.O:
-        pos_fim = (lin, col-1)
-        orientacao_final = "L"
-        print(f"achar_movimentos: pos_parede=L: {indice=}, {orientacao_final=}")
-    else:
-        print(f"achar_movimentos: {indice=}: {pos_ini=}, {pos_fim=}. {orientacao=}, {orientacao_final=}")
-        assert False
+    if mapa[lin][col].tipo == tipo_celula.EDIFICIO:
+        indice = next((i for i, valor in mapa[lin][col].paredes.items() if valor == tipo_parede.ENTRADA))
+        print(f"achar_movimentos: {indice=}")
+        
+        if indice is None:
+            print("achar_movimentos: não há entradas disponíveis")
+            return []
+    
+        if   indice == posicao_parede.N:
+            pos_fim = (lin-1, col)
+            orientacao_final = "S"
+            print(f"achar_movimentos: pos_parede=N: {indice=}, {orientacao_final=}")
+        elif indice == posicao_parede.S:
+            pos_fim = (lin+1, col)
+            orientacao_final = "N"
+            print(f"achar_movimentos: pos_parede=S: {indice=}, {orientacao_final=}")
+        elif indice == posicao_parede.L:
+            pos_fim = (lin, col+1)
+            orientacao_final = "O"
+            print(f"achar_movimentos: pos_parede=O: {indice=}, {orientacao_final=}")
+        elif indice == posicao_parede.O:
+            pos_fim = (lin, col-1)
+            orientacao_final = "L"
+            print(f"achar_movimentos: pos_parede=L: {indice=}, {orientacao_final=}")
+        else:
+            print(f"achar_movimentos: {indice=}: {pos_ini=}, {pos_fim=}. {orientacao=}, {orientacao_final=}")
+            assert False
     
     caminho     = a_estrela(mapa, pos_ini, pos_fim)
     print("achar_movimentos:", *caminho, sep=" -> ")
     caminho_rel = caminho_relativo(caminho)
     print(f"achar_movimentos: {caminho_rel=}")
 
-    return (movimento_relativo(caminho_rel, orientacao), orientacao_final) #! tratar orientação final None e caminho vazio no chamador
+    return (movimento_relativo(caminho_rel, orientacao), orientacao_final, pos_fim) #! tratar orientação final None e caminho vazio no chamador

@@ -148,11 +148,14 @@ def identificar(color, sensor="chao") -> cor: # type: ignore
     elif sensor == "chao":
         identificar_cor = identificar_por_intervalo_hsv
         mapa = mapa_hsv
+    else:
+        print(sensor)
+        assert False
 
     try: #! ver jeito melhor
         return identificar_cor(color, mapa)
     except TypeError as e:
-        print(f"cores.identificar: {e}")
+        #! print(f"cores.identificar: {e}")
         hsv = color.h, color.s, color.v
         return identificar_cor(hsv, mapa)
 
@@ -170,7 +173,7 @@ def parede_unificado(color, hsv):
                 ((identificar(hsv) == cor.PRETO) or
                  (identificar(hsv) == cor.BRANCO) or
                  (identificar(hsv) == cor.NENHUMA)))
-    #! checar de novo se precisa do combinado
+    #! foi o combinado que fez a gente ficar parando antes da última partida
     return deles or combinado
 
 def beco_unificado(color, hsv):

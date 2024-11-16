@@ -5,10 +5,12 @@ TX_BRACO  = 69
 
 comando_bt = Enum("comando_bt", ["fecha_garra",
                                  "abre_garra",
+                                 "reseta_garra",
                                  "ver_cor_passageiro",
                                  "ver_hsv_passageiro",
                                  "ver_distancias",
                                  #! fazer um enum comandos e outro respostas
+                                 "resetei",
                                  "fechei",
                                  "abri",
                                  "cor_passageiro",
@@ -21,6 +23,7 @@ def esperar_resposta(hub, esperado, canal=TX_BRACO):
         comando = hub.ble.observe(canal)
         if comando is not None:
             comando, *args = comando
+    hub.ble.broadcast(None)
     return args
 
 def fechar_garra(hub):
@@ -32,6 +35,11 @@ def abrir_garra(hub):
     print("abrir_garra:")
     hub.ble.broadcast((comando_bt.abre_garra,))
     return esperar_resposta(hub, comando_bt.abri)
+
+def resetar_garra(hub):
+    print("resetar_garra:")
+    hub.ble.broadcast((comando_bt.reseta_garra,))
+    return esperar_resposta(hub, comando_bt.resetei)
 
 def ver_cor_passageiro(hub):
     print("ver_cor_passageiro:")

@@ -1,7 +1,7 @@
 from lib.bipes import bipe_inicio, bipe_final, bipe_falha
 
-ID = None     if False  else ID # pyright: ignore
-id = ID.TESTE if not ID else id # pyright: ignore
+ID = None     if False else ID # pyright: ignore
+id = ID.TESTE if False else id # pyright: ignore
 
 if id == ID.CABECA:
     import cabeca
@@ -9,7 +9,7 @@ if id == ID.CABECA:
     print(hub.battery.voltage())
 
     bipe_inicio(hub)
-    cabeca.main(hub)
+    cabeca.main()
     bipe_final(hub)
 elif id == ID.BRACO:
     import braco
@@ -23,7 +23,7 @@ elif id == ID.BRACO:
             bipe_final(hub)
         except Exception as e:
             bipe_falha(hub)
-            print(f"{e}")
+            print(f"braco: {e}")
             continue
 
 elif id == ID.TESTE:

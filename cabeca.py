@@ -8,6 +8,9 @@ from pybricks.robotics   import DriveBase
 
 from lib.bipes     import bipe_calibracao, bipe_cabeca, musica_vitoria, musica_derrota
 from lib.caminhos  import achar_movimentos, tipo_movimento, posicao_desembarque_adulto
+from lib.polyfill  import Enum
+
+from micropython import const
 
 from urandom import choice
 
@@ -15,35 +18,66 @@ import cores
 import gui
 import bluetooth as blt
 
+#! colocar em outro módulo
+LOG_LEVEL = Enum("LOG_LEVEL",
+    ["NENHUM", "DEBUG", "INFO", "MOVIMENTO", "CORES", "TUDO"]
+)
+DEBUG = LOG_LEVEL.TUDO
 
-TAM_BLOCO   = 300
-TAM_BLOCO_Y = 294 # na nossa arena os quadrados não são 30x30cm (são 29.4 por quase 30)
+def void(*_, **kw_): return None
+debug = log_info = log_mov = log_cor = void
 
-TAM_FAIXA = 30
-TAM_BLOCO_BECO = TAM_BLOCO_Y - TAM_FAIXA # os blocos dos becos são menores por causa do vermelho
+if DEBUG >= LOG_LEVEL.DEBUG:
+    debug    = print
+if DEBUG >= LOG_LEVEL.INFO:
+    log_info = print
+if DEBUG >= LOG_LEVEL.MOVIMENTO:
+    log_mov  = print
+if DEBUG >= LOG_LEVEL.CORES:
+    log_cor  = print
 
-PISTA_TODA = TAM_BLOCO*6
+TAM_BLOCO   = const(300)
+TAM_BLOCO_Y = const(294) # na nossa arena os quadrados não são 30x30cm (são 29.4 por quase 30)
 
-DIST_EIXO_SENSOR = 80 #mm
-DIST_EIXO_SENS_DIST = 45 #mm   #! checar
+TAM_FAIXA = const(30)
+TAM_FAIXA_AZUL = const(60)
+TAM_BLOCO_BECO = const(TAM_BLOCO_Y - TAM_FAIXA) # os blocos dos becos são menores por causa do vermelho
 
-DIST_PASSAGEIRO_RUA = 220 #! checar
+PISTA_TODA = const(TAM_BLOCO*6)
+
+DIST_EIXO_SENSOR    = const(80) #mm
+DIST_EIXO_SENS_DIST = const(45) #mm   #! checar
+
+DIST_PASSAGEIRO_RUA = const(220) #! checar
 
 
-#! checar stall: jogar exceção
+#! checar stall ou parado (usar imu) quando não devia: jogar exceção
 #! checar cor errada no azul
 #! tem um lugar começo do achar azul que tem que dar ré
+#! mudar vários debugs pra esses logs novos
+#! provavelmente mudar andar_ate pra receber uma fn -> bool e retornar só bool, dist (pegar as informações extras na própria função chamante)
+#! fazer posição_estimada/caminho_percorrido_estimado e usar isso pra ter as possibilidades de onde tá
+#! talvez usar sensor de cor pra detectar obstáculo de frente (mecanicamente talvez não funcione(muito longe))
+#! dá pra usar o sensor de pressão pra detectar o obstáculo
+#! fazer módulo movimento/andar_até
+#! explorar se faz sentido usar async/await
+
+#! fazer função de calibração com todos os componentes do hsv (talvez fazer dist euclid e usar pesos)
+
+#! colocar mais peso na frente, talvez mudar as coisas de lugar fisicamente
+
+#! ele perde a orientação no alinhar, precisa guardar o quanto ele girou pra cada lado (uma espécie orientação fracionária, se pensar bem) (NSLO, ang)
 
 
 def setup():
-    global hub, rodas
+    global hub, rodas, relogio_global
     global sensor_cor_esq, sensor_cor_dir, sensor_ultra_esq, sensor_ultra_dir
     global botao_calibrar, orientacao_estimada
     global rodas_conf_padrao, vels_padrao, vel_padrao, vel_ang_padrao #! fazer um dicionário e concordar com mudar_velocidade
     
     orientacao_estimada = ""
     hub = PrimeHub(broadcast_channel=blt.TX_CABECA, observe_channels=[blt.TX_BRACO])
-    print(hub.system.name())
+    log_info(f"spike: {hub.system.name()}")
     while hub.system.name() != "spike1":
         hub.speaker.beep(frequency=1024)
         wait(200)
@@ -67,10 +101,21 @@ def setup():
 
     botao_calibrar = Button.CENTER
 
-    rodas_conf_padrao = rodas.settings() #! CONSTANTIZAR
-    vel_padrao =     rodas_conf_padrao[0]
+    rodas_conf_padrao = rodas.settings() #! CONSTANTIZAR + colocar como um dicionário + usar no mudar_velocidade
+
+    vel_padrao     = rodas_conf_padrao[0]
     vel_ang_padrao = rodas_conf_padrao[2]
+    accel_padrao     = rodas_conf_padrao[1]
+    accel_ang_padrao = rodas_conf_padrao[3]
+
     vels_padrao = vel_padrao, vel_ang_padrao
+
+    rodas.settings(vel_padrao*70//40,
+                   accel_padrao,
+                   vel_ang_padrao*70//40,
+                   accel_ang_padrao) #! pus velocidade máxima
+
+    relogio_global = StopWatch()
 
     return hub
 
@@ -98,10 +143,13 @@ class mudar_velocidade():
 
 def inverte_orientacao():
     global orientacao_estimada
-    if orientacao_estimada == "N": orientacao_estimada = "S"
-    if orientacao_estimada == "S": orientacao_estimada = "N"
-    if orientacao_estimada == "L": orientacao_estimada = "O"
-    if orientacao_estimada == "O": orientacao_estimada = "L"
+    if   orientacao_estimada == "N": orientacao_estimada = "S"
+    elif orientacao_estimada == "S": orientacao_estimada = "N"
+    elif orientacao_estimada == "L": orientacao_estimada = "O"
+    elif orientacao_estimada == "O": orientacao_estimada = "L"
+    else:
+        debug(f"inverte_orientação {orientacao_estimada}")
+        assert False
 
 def ler_ultrassons():
     return sensor_ultra_esq.distance(), sensor_ultra_dir.distance()
@@ -110,29 +158,31 @@ def dar_meia_volta():
     inverte_orientacao()
     rodas.turn(180)
     
-def virar_direita():
+def virar_direita(): #! checar a distância aqui e retornar se foi ou tem obstáculo
     global orientacao_estimada
     if   orientacao_estimada == "N": orientacao_estimada = "L"
+    elif orientacao_estimada == "O": orientacao_estimada = "N"
     elif orientacao_estimada == "S": orientacao_estimada = "O"
     elif orientacao_estimada == "L": orientacao_estimada = "S"
-    elif orientacao_estimada == "O": orientacao_estimada = "N"
 
-    print(f"virar_direita: {orientacao_estimada=}")
+    log_info(f"virar_direita: {orientacao_estimada=}")
     rodas.turn(90)
 
-def virar_esquerda():
+def virar_esquerda(): #! checar a distância aqui e retornar se foi ou tem obstáculo
     global orientacao_estimada
     if   orientacao_estimada == "N": orientacao_estimada = "O"
+    elif orientacao_estimada == "O": orientacao_estimada = "S"
     elif orientacao_estimada == "S": orientacao_estimada = "L"
     elif orientacao_estimada == "L": orientacao_estimada = "N"
-    elif orientacao_estimada == "O": orientacao_estimada = "S"
 
-    print(f"virar_esquerda: {orientacao_estimada=}")
+    log_info(f"virar_esquerda: {orientacao_estimada=}")
     rodas.turn(-90)
 
-def muda_orientação(ori_final):
+def mudar_orientação(ori_final):
+    log_info(f"mudar_orientacao: {orientacao_estimada} a {ori_final}")
     while orientacao_estimada != ori_final:
         virar_esquerda()
+        debug(f"mudar_orientacao: indo {orientacao_estimada} a {ori_final}")
 
 DIST_PARAR=-0.4
 def parar():
@@ -152,8 +202,6 @@ def dar_re_meio_bloco(eixo_menor=False):
     else:
         dar_re(TAM_BLOCO//2   - DIST_EIXO_SENSOR)
 
-#! provavelmente mudar andar_ate pra receber uma fn -> bool e retornar só bool, dist (pegar as informações extras na própria função)
-
 def ver_nao_pista() -> tuple[bool, tuple[Color, hsv], tuple[Color, hsv]]: # type: ignore
     #! usar verificar_cor em vez disso?
     esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
@@ -172,18 +220,19 @@ def verificar_cor(func_cor) -> Callable[None, tuple[bool, int]]: # type: ignore
     return f
 
 def ver_passageiro_perto():
-    #print("ver_passageiro_perto")
+    #log_info("ver_passageiro_perto")
     dist_esq, dist_dir = ler_ultrassons()
     return ((dist_esq < DIST_PASSAGEIRO_RUA or dist_dir < DIST_PASSAGEIRO_RUA),
             dist_esq, dist_dir)
 
 def nao_ver_passageiro_perto():
-    #print("nao_ver_passageiro_perto")
+    #log_info("nao_ver_passageiro_perto")
     dist_esq, dist_dir = ler_ultrassons()
     return ((dist_esq < DIST_PASSAGEIRO_RUA and dist_dir < DIST_PASSAGEIRO_RUA),
             dist_esq, dist_dir)
 
 def andar_ate_idx(*conds_parada: Callable, dist_max=PISTA_TODA) -> tuple[bool, tuple[Any]]: # type: ignore
+    log_info("andar_ate:")
     rodas.reset()
     rodas.straight(dist_max, wait=False)
     while not rodas.done():
@@ -209,10 +258,10 @@ def andar_ate_bool(sucesso, neutro=nunca_parar, fracasso=ver_nao_pista,
         elif res == frac: return False, extra
         elif res == neut: continue
         elif res == 0:
-            print("andar_ate_cor: andou demais")
+            debug("andar_ate_cor: andou demais")
             return False, (None,) #ou(res, extra)
         else: 
-            print(res)
+            debug(f"andar_ate_cor: {res}")
             assert False
 
 def alinha_limite(max_tentativas=3):
@@ -241,7 +290,7 @@ def achar_azul() -> bool:
     esq, dir = achar_limite(); alinha_limite() # anda reto até achar o limite
 
     if cores.beco_unificado(*esq) or cores.beco_unificado(*dir): #! beco é menor que os outros blocos
-        print(f"achar_azul: beco")
+        log_info(f"achar_azul: beco")
 
         dar_re_meio_bloco()
         dar_re(TAM_BLOCO_BECO) 
@@ -250,71 +299,79 @@ def achar_azul() -> bool:
 
         #! lidar com os casos de cada visto (andar_ate[...])
         esq, dir = achar_limite(); alinha_limite() # anda reto até achar o limite
-        print(f"achar_azul: beco indo azul") 
+        log_info(f"achar_azul: beco indo azul") 
 
         if cores.parede_unificado(*esq) or cores.parede_unificado(*dir): dar_meia_volta()
 
         #! lidar com os casos de cada visto (andar_ate[...])
         esq, dir = achar_limite() # anda reto até achar o limite #! alinha?
-        print(f"achar_azul: beco indo azul certeza")
+        log_info(f"achar_azul: beco indo azul certeza")
 
-        return cores.certificar(sensor_cor_esq, sensor_cor_dir, cores.azul_unificado)
+        if cores.certificar(sensor_cor_esq, sensor_cor_dir, cores.azul_unificado):
+            return True
+        else:
+            alinha_limite()
+            return cores.certificar(sensor_cor_esq, sensor_cor_dir, cores.azul_unificado)
     elif cores.parede_unificado(*esq) or cores.parede_unificado(*dir):
-        print(f"achar_azul: parede")
+        log_info(f"achar_azul: parede")
 
         dar_re_meio_bloco()
         choice((virar_direita, virar_esquerda))() # divertido      
 
         return False
     else: #azul
-        print("achar_azul: vi azul")
+        log_info("achar_azul: vi azul")
         #! deixar mais andar_ate(ver_azul, ver_nao_branco) switch()
         esq, dir = achar_limite() # anda reto até achar o limite #! alinha?
 
         if cores.certificar(sensor_cor_esq, sensor_cor_dir, cores.azul_unificado):
-            print("achar_azul: azul mesmo")
+            log_info("achar_azul: azul mesmo")
             dar_re(TAM_BLOCO_BECO*3//8)
             return True
         else:
-            print("achar_azul: não azul")
+            log_info("achar_azul: não azul")
             dar_re_meio_bloco()
             choice((virar_direita, virar_esquerda))() #!
             return False
 
-def alinha_parede(vel, vel_ang, giro_max=45) -> bool:
-    alinhado_parede = lambda esq, dir: not cores.pista_unificado(*esq) and not cores.pista_unificado(*dir)
-    alinhado_pista  = lambda esq, dir: cores.pista_unificado(*esq) and cores.pista_unificado(*dir)
+def alinha_parede(vel, vel_ang, giro_max=45) -> bool: #! avaliar giro_max
+    alinhado_nao_pista = (lambda esq, dir: not cores.pista_unificado(*esq) and not cores.pista_unificado(*dir))
+    desalinhado_esq    = (lambda esq, dir: not cores.pista_unificado(*esq) and     cores.pista_unificado(*dir))
+    desalinhado_dir    = (lambda esq, dir: not cores.pista_unificado(*dir) and     cores.pista_unificado(*esq))
+    alinhado_pista     = (lambda esq, dir:     cores.pista_unificado(*esq) and     cores.pista_unificado(*dir))
 
     with mudar_velocidade(rodas, vel, vel_ang):
         parou, extra = andar_ate_idx(ver_nao_pista, dist_max=TAM_BLOCO//2)
         if not parou:
             (dist,) = extra
-            print(f"alinha_parede: reto branco {dist}")
+            debug(f"alinha_parede: reto branco {dist}")
             return False # viu só branco, não sabemos se tá alinhado
     
         (dir, esq) = extra
-        if  alinhado_parede(esq, dir):
-            print("alinha_parede: reto não pista")
+        if  alinhado_nao_pista(esq, dir):
+            debug("alinha_parede: reto não pista")
             return True
-        elif not cores.pista_unificado(*dir):
-            print("alinha_parede: torto pra direita")
+        elif desalinhado_dir(esq, dir):
+            debug("alinha_parede: torto pra direita")
             GIRO = -giro_max
-        elif not cores.pista_unificado(*esq):
-            print("alinha_parede: torto pra esquerda")
+        elif desalinhado_esq(esq, dir):
+            debug("alinha_parede: torto pra esquerda")
             GIRO = giro_max
 
         rodas.turn(GIRO, wait=False) #! fazer gira_ate
         while not rodas.done():
             esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
-            print(esq, dir)
-            if  alinhado_parede(esq, dir):
-                print("alinha_parede: alinhado parede")
+            if  alinhado_nao_pista(esq, dir):
+                debug("alinha_parede: alinhado parede")
                 parar_girar()
                 return True # deve tar alinhado
             elif alinhado_pista(esq, dir):
-                print("alinha_parede: alinhado pista")
+                debug("alinha_parede: alinhado pista")
                 parar_girar()
                 return False #provv alinhado, talvez tentar de novo
+
+            if relogio_global.time() % 100 == 0:
+                log_cor(f"alinha_parede: desalinhado {esq}, {dir}")
         return False # girou tudo, não sabemos se tá alinhado
 
 def alinhar(max_tentativas=4, virar=True, vel=80, vel_ang=20, giro_max=70) -> None:
@@ -339,11 +396,11 @@ def alinhar(max_tentativas=4, virar=True, vel=80, vel_ang=20, giro_max=70) -> No
 def pegar_passageiro() -> bool:
     global orientacao_estimada
 
-    print("pegar_passageiro:")
+    log_info("pegar_passageiro:")
     with mudar_velocidade(rodas, 50):
         res, info = andar_ate_idx(ver_passageiro_perto,
                                   verificar_cor(cores.beco_unificado),
-                                  verificar_cor(cores.parede_unificado),
+                                  #! verificar_cor(cores.parede_unificado),
                                   dist_max=TAM_BLOCO*4)
         if res == 1:
             (dist_esq, dist_dir) = info
@@ -358,21 +415,32 @@ def pegar_passageiro() -> bool:
             with mudar_velocidade(rodas, *vels_padrao):
                 dar_re(DIST_EIXO_SENS_DIST-20) #! desmagificar
                 virar()
-                rodas.straight(dist)
+                andar_ate_bool(verificar_cor(cores.azul_unificado), dist_max=70) #! desmagificar
+                rodas.straight(min(dist, TAM_FAIXA_AZUL+10))
                 blt.fechar_garra(hub)
             cor_cano = blt.ver_cor_passageiro(hub)
-            print(f"pegar_passageiro: cor_cano {cores.cor(cor_cano)}")
+            log_info(f"pegar_passageiro: cor_cano {cores.cor(cor_cano)}")
 
-            if cor_cano == cores.cor.BRANCO or cor_cano == cores.cor.NENHUMA: #!
+            if cor_cano == cores.cor.BRANCO: 
                 with mudar_velocidade(rodas, *vels_padrao):
                     blt.abrir_garra(hub)
-                    rodas.straight(-dist)
+                    dar_re(min(dist, TAM_FAIXA_AZUL+10))
                     desvirar()
+                    rodas.straight(TAM_BLOCO//4) #! desmagi
+                return False
+            elif cor_cano == cores.cor.NENHUMA: #!
+                with mudar_velocidade(rodas, *vels_padrao):
+                    dar_re(20) #! desmagi
+                    blt.abrir_garra(hub)
+                    dar_re(min(dist, TAM_FAIXA_AZUL+10))
+                    blt.resetar_garra(hub)
+                    desvirar()
+                    #dar_re(20) #! desmagi
                 return False
             return True
         elif res == 2:
             (cor_esq, cor_dir) = info
-            print(f"pegar_passageiro: vermelho {cor_esq=}, {cor_dir=}")
+            log_cor(f"pegar_passageiro: vermelho {cor_esq=}, {cor_dir=}")
             with mudar_velocidade(rodas, *vels_padrao):
                 dar_re_meio_bloco()
                 dar_meia_volta()
@@ -380,14 +448,14 @@ def pegar_passageiro() -> bool:
             return False # é pra ter chegado no vermelho
         elif res == 3:
             (cor_esq, cor_dir) = info
-            print(f"pegar_passageiro: nao_pista {cor_esq=}, {cor_dir=}")
+            log_cor(f"pegar_passageiro: parede {cor_esq=}, {cor_dir=}")
             with mudar_velocidade(rodas, *vels_padrao):
                 dar_re_meio_bloco()
                 dar_meia_volta()
 
             return False #! falhar mais alto
         else:
-            print(f"pegar_passageiro: andou muito {rodas.distance()}")
+            log_info(f"pegar_passageiro: andou muito {rodas.distance()}")
             with mudar_velocidade(rodas, *vels_padrao):
                 dar_re_meio_bloco()
                 dar_meia_volta()
@@ -396,54 +464,65 @@ def pegar_passageiro() -> bool:
 
 def pegar_primeiro_passageiro() -> Color:
     global orientacao_estimada
-    print("pegar_primeiro_passageiro:")
+
+    log_info("pegar_primeiro_passageiro:")
     #! a cor é pra ser azul
     virar_direita()
-    deu, _ = andar_ate_bool(verificar_cor(cores.beco_unificado),
-                           fracasso=verificar_cor(cores.parede_unificado))
-    while not deu:
-        deu, _ = andar_ate_bool(verificar_cor(cores.beco_unificado),
+    deu, _ = andar_ate_bool(sucesso=verificar_cor(cores.beco_unificado),
+                            fracasso=verificar_cor(cores.parede_unificado))
+    while not deu: #! fazer com exceção aqui
+        deu, _ = andar_ate_bool(sucesso=verificar_cor(cores.beco_unificado),
                                 fracasso=verificar_cor(cores.parede_unificado))
+
     dar_re_meio_bloco()
     dar_meia_volta()
 
-    pegou = pegar_passageiro()
-    while not pegou:
-        pegou = pegar_passageiro()
+    pegou = False
+    while not pegou: pegou = pegar_passageiro()
     
     return blt.ver_cor_passageiro(hub)
 
+def interpretar_movimento(mov): #! talvez lidar com coisas novas enquanto tiver aqui
+    if   mov == tipo_movimento.FRENTE:
+        rodas.straight(TAM_BLOCO, then=Stop.COAST)
+    elif mov == tipo_movimento.TRAS:
+        dar_meia_volta()
+        rodas.straight(TAM_BLOCO, then=Stop.COAST)
+    elif mov == tipo_movimento.ESQUERDA_FRENTE:
+        virar_esquerda()
+        rodas.straight(TAM_BLOCO, then=Stop.COAST)
+    elif mov == tipo_movimento.DIREITA_FRENTE:
+        virar_direita()
+        rodas.straight(TAM_BLOCO, then=Stop.COAST)
+    elif mov == tipo_movimento.ESQUERDA:
+        virar_esquerda()
+    elif mov == tipo_movimento.DIREITA:
+        virar_direita()
+
+def interpretar_caminho(caminho): #! receber orientação?
+    for mov in caminho: #! yield orientação nova?
+        debug(f"interpretar_caminho: {tipo_movimento(mov)}")
+        interpretar_movimento(mov)
+        yield rodas.distance()
+
 def seguir_caminho(pos, obj): #! lidar com outras coisas
-    def interpretar_movimento(mov):
-        if   mov == tipo_movimento.FRENTE:
-            rodas.straight(TAM_BLOCO, then=Stop.COAST)
-        elif mov == tipo_movimento.TRAS:
-            dar_meia_volta()
-            rodas.straight(TAM_BLOCO, then=Stop.COAST)
-        elif mov == tipo_movimento.ESQUERDA_FRENTE:
-            virar_esquerda()
-            rodas.straight(TAM_BLOCO, then=Stop.COAST)
-        elif mov == tipo_movimento.DIREITA_FRENTE:
-            virar_direita()
-            rodas.straight(TAM_BLOCO, then=Stop.COAST)
-        elif mov == tipo_movimento.ESQUERDA:
-            virar_esquerda()
-        elif mov == tipo_movimento.DIREITA:
-            virar_direita()
-
-    def interpretar_caminho(caminho): #! receber orientação?
-        for mov in caminho: #! yield orientação nova?
-            print(f"seguir_caminho: {tipo_movimento(mov)}")
-            interpretar_movimento(mov)
-            yield rodas.distance()
-
-    movs, ori_final = achar_movimentos(pos, obj, orientacao_estimada)
-    #print(*(tipo_movimento(mov) for mov in movs))
+    movs, ori_final, pos_fim = achar_movimentos(pos, obj, orientacao_estimada)
 
     for _ in interpretar_caminho(movs):
         while not rodas.done(): pass
     
     mudar_orientação(ori_final)
+
+    return pos_fim
+
+def seguir_caminho_contrario(pos, obj):
+    _   , ori_final, pos_final = achar_movimentos(pos,       obj, orientacao_estimada)
+    movs, _,         pos_final = achar_movimentos(pos_final, pos, ori_final)
+
+    for _ in interpretar_caminho(movs):
+        while not rodas.done(): pass
+    
+    return pos_final
 
 def menu_calibracao(hub, sensor_esq, sensor_dir,
                                      botao_parar=Button.BLUETOOTH,
@@ -476,7 +555,7 @@ def menu_calibracao(hub, sensor_esq, sensor_dir,
             return mapa_hsv
 
 
-def main(hub):
+def main():
     global orientacao_estimada
 
     crono = StopWatch()
@@ -486,20 +565,24 @@ def main(hub):
             bipe_calibracao(hub)
             #! levar os dois sensores em consideração separadamente
             mapa_hsv = menu_calibracao(hub, sensor_cor_esq, sensor_cor_dir)
-            cores.repl_calibracao(mapa_hsv)#, lado="esq")
+            cores.repl_calibracao(mapa_hsv)
             return
 
     hub.system.set_stop_button((Button.BLUETOOTH,))
     while True:
         bipe_cabeca(hub)
+        blt.resetar_garra(hub)
 
+        """
         #! antes de qualquer coisa, era bom ver se na sua frente tem obstáculo
         #! sobre isso ^ ainda, tem que tomar cuidado pra não confundir eles com os passageiros
         achou_azul = False
         alinhar()
         while not achou_azul:
             achou_azul = achar_azul()
-        print(f"{orientacao_estimada=}") #assert ori == "L"
+        debug(f"main: {orientacao_estimada=}") #assert ori == "L"
+        """
+        achar_limite(); alinha_limite() #! teste agora
         orientacao_estimada = "L"
         cor = pegar_primeiro_passageiro()
 
@@ -513,7 +596,7 @@ def main(hub):
         elif cor == cores.cor.MARROM:   fim = posicao_desembarque_adulto['MARROM'] #! fazer acontecer
         else: #! marrom
             fim = posicao_desembarque_adulto['MARROM']
-            print(f"{cores.cor(cor)}")
+            debug(f"main: {cores.cor(cor)}")
             assert False
 
         dar_re(TAM_BLOCO//3) #! desmagificar
@@ -525,7 +608,7 @@ def main(hub):
         if   orientacao_estimada == "N": pos = (0,5)
         elif orientacao_estimada == "S": pos = (4,5)
         else:
-            print(f"{orientacao_estimada=}")
+            log_info(f"main: {orientacao_estimada=}")
             assert False
 
         seguir_caminho(pos, fim)
@@ -534,4 +617,4 @@ def main(hub):
         blt.abrir_garra(hub)
         dar_re(TAM_BLOCO//2)
 
-        seguir_caminho(fim, pos)
+        seguir_caminho_contrario(pos, fim)
