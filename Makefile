@@ -1,25 +1,40 @@
-all: cabeca_imediato braco_imediato
+PYBRICKS = .venv/bin/python3 -m pybricksdev
+
+_BRACO  = .__main_braco__.py
+_CABECA = .__main_cabeca__.py
+
+NOME_CABECA = "spike1"
+NOME_BRACO  = "spike0"
 
 
-cabeca: __main_cabeca.py
-	.venv/bin/python3 -m pybricksdev run ble --name "spike1" __main_cabeca.py
-	rm __main_cabeca.py
-braco: __main_braco.py
-	.venv/bin/python3 -m pybricksdev run ble --name "spike0" __main_braco.py
-	rm __main_braco.py
+.PHONY:
+all: cabeca_imediato braco_imediato clean
+
+.PHONY: cabeca braco
+cabeca: $(_CABECA)
+	$(PYBRICKS) run ble --name $(NOME_CABECA) $<
+braco:  $(_BRACO)
+	$(PYBRICKS) run ble --name $(NOME_BRACO) $<
 
 
-cabeca_imediato: __main_cabeca.py
-	.venv/bin/python3 -m pybricksdev run ble --name "spike1" __main_cabeca.py --no-wait
-	rm __main_cabeca.py
-braco_imediato: __main_braco.py
-	.venv/bin/python3 -m pybricksdev run ble --name "spike0" __main_braco.py --no-wait
-	rm __main_braco.py
+.PHONY: cabeca_imediato braco_imediato
+cabeca_imediato: $(_CABECA)
+	$(PYBRICKS) run ble --name $(NOME_CABECA) $< --no-wait
+braco_imediato:  $(_BRACO)
+	$(PYBRICKS) run ble --name $(NOME_BRACO) $< --no-wait
 
 
-__main_cabeca.py:
-	cat build/pre_cabeca.py main.py > __main_cabeca.py
+#! colocar os outros módulos como dependência
+$(_CABECA): build/pre_cabeca.py main.py
+	cat build/pre_cabeca.py main.py > $@
 
-__main_braco.py:
-	cat build/pre_braco.py main.py > __main_braco.py
+#! colocar os outros módulos como dependência
+$(_BRACO): build/pre_braco.py main.py
+	cat build/pre_braco.py main.py > $@
+
+
+.PHONY:
+clean:
+	-rm $(_CABECA)
+	-rm $(_BRACO)
 
