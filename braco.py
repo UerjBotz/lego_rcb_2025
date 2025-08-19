@@ -63,7 +63,7 @@ def main(hub):
                 garra.levanta_garra(motor_vertical)
                 garra_levantada = True
             hub.ble.broadcast((comando_bt.levantei,))
-        elif comando == comando_bt.abre_garra:
+        elif comando == comando_bt.abaixa_garra:
             print("pediu abaixo")
             if garra_levantada:
                 print("abaixando")
