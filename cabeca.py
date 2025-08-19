@@ -56,8 +56,8 @@ def setup():
     sensor_cor_esq = ColorSensor(Port.D)
     sensor_cor_dir = ColorSensor(Port.C)
 
-    sensor_ultra_esq = UltrasonicSensor(Port.F)
-    sensor_ultra_dir = UltrasonicSensor(Port.E)
+    #sensor_ultra_esq = UltrasonicSensor(Port.F)
+    #sensor_ultra_dir = UltrasonicSensor(Port.E)
 
     roda_esq = Motor(Port.B, positive_direction=Direction.COUNTERCLOCKWISE)
     roda_dir = Motor(Port.A, positive_direction=Direction.CLOCKWISE)
