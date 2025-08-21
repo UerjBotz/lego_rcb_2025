@@ -19,7 +19,7 @@ elif id == ID.BRACO:
     while True:
         try:
             bipe_inicio(hub)
-            braco.main()
+            braco.main(hub)
             bipe_final(hub)
         except Exception as e:
             bipe_falha(hub)
