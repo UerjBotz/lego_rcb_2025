@@ -21,9 +21,9 @@ def setup():
     else:
         hub.light.blink(Color.ORANGE, [100,50,200,100])
 
-    motor_garra       = Motor(Port.F) # porta original: C
-    motor_vertical    = Motor(Port.E) # novo
-    sensor_cor_frente = ColorSensor(Port.A)
+    motor_garra       = Motor(Port.B) # porta original: C
+    motor_vertical    = Motor(Port.A) # novo
+    sensor_cor_frente = ColorSensor(Port.D)
 
     garra_fechada = False
     garra_levantada = False
@@ -56,7 +56,7 @@ def main(hub):
                 garra_fechada = False
             hub.ble.broadcast((comando_bt.abri,))
 
-        if   comando == comando_bt.levanta_garra:
+        elif comando == comando_bt.levanta_garra:
             print("pediu levanto")
             if not garra_levantada:
                 print("levantando")

@@ -59,8 +59,8 @@ def setup():
     #sensor_ultra_esq = UltrasonicSensor(Port.F)
     #sensor_ultra_dir = UltrasonicSensor(Port.E)
 
-    roda_esq = Motor(Port.B, positive_direction=Direction.COUNTERCLOCKWISE)
-    roda_dir = Motor(Port.A, positive_direction=Direction.CLOCKWISE)
+    roda_esq = Motor(Port.A, positive_direction=Direction.COUNTERCLOCKWISE)
+    roda_dir = Motor(Port.B, positive_direction=Direction.CLOCKWISE)
 
     rodas = DriveBase(roda_esq, roda_dir,
                       wheel_diameter=88, axle_track=145.5) #! ver depois se recalibrar
@@ -476,7 +476,6 @@ def menu_calibracao(hub, sensor_esq, sensor_dir,
 
 def main(hub):
     global orientacao_estimada
-
     crono = StopWatch()
     while crono.time() < 100: #! ativar calibração quando for usar
         botões = hub.buttons.pressed()
