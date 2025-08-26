@@ -14,4 +14,5 @@ def levanta_garra(motor_vertical, vel=240):
     motor_vertical.run_angle(vel, DIST_GARRA, then=Stop.COAST, wait=True)
 
 def abaixa_garra(motor_vertical, vel=240):
-    motor_vertical.run_angle(-vel, DIST_GARRA, then=Stop.COAST, wait=True)
+    motor_vertical.run_until_stalled(vel, then=Stop.COAST, duty_limit=None)
+    #motor_vertical.run_angle(-vel, DIST_GARRA, then=Stop.COAST, wait=True)

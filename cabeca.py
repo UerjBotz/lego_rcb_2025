@@ -59,8 +59,8 @@ def setup():
     #sensor_ultra_esq = UltrasonicSensor(Port.F)
     #sensor_ultra_dir = UltrasonicSensor(Port.E)
 
-    roda_esq = Motor(Port.A, positive_direction=Direction.COUNTERCLOCKWISE)
-    roda_dir = Motor(Port.B, positive_direction=Direction.CLOCKWISE)
+    roda_esq = Motor(Port.A, positive_direction=Direction.CLOCKWISE)
+    roda_dir = Motor(Port.B, positive_direction=Direction.COUNTERCLOCKWISE)
 
     rodas = DriveBase(roda_esq, roda_dir,
                       wheel_diameter=88, axle_track=145.5) #! ver depois se recalibrar
