@@ -56,11 +56,8 @@ def setup():
     sensor_cor_esq = ColorSensor(Port.D)
     sensor_cor_dir = ColorSensor(Port.C)
 
-    sensor_ultra_esq = UltrasonicSensor(Port.F)
-    sensor_ultra_dir = UltrasonicSensor(Port.E)
-
-    roda_esq = Motor(Port.B, positive_direction=Direction.COUNTERCLOCKWISE)
-    roda_dir = Motor(Port.A, positive_direction=Direction.CLOCKWISE)
+    roda_esq = Motor(Port.A, positive_direction=Direction.CLOCKWISE)
+    roda_dir = Motor(Port.B, positive_direction=Direction.COUNTERCLOCKWISE)
 
     rodas = DriveBase(roda_esq, roda_dir,
                       wheel_diameter=88, axle_track=145.5) #! ver depois se recalibrar
@@ -68,7 +65,7 @@ def setup():
     botao_calibrar = Button.CENTER
 
     rodas_conf_padrao = rodas.settings() #! CONSTANTIZAR
-    vel_padrao =     rodas_conf_padrao[0]
+    vel_padrao     = rodas_conf_padrao[0]
     vel_ang_padrao = rodas_conf_padrao[2]
     vels_padrao = vel_padrao, vel_ang_padrao
 
@@ -476,7 +473,6 @@ def menu_calibracao(hub, sensor_esq, sensor_dir,
 
 def main(hub):
     global orientacao_estimada
-
     crono = StopWatch()
     while crono.time() < 100: #! ativar calibração quando for usar
         botões = hub.buttons.pressed()

@@ -10,8 +10,8 @@ import cores
 import garra
 
 def setup():
-    global hub, motor_garra, sensor_cor_frente, ultra_dir, ultra_esq
-    global garra_fechada
+    global hub, motor_garra, motor_vertical, sensor_cor_frente, ultra_dir, ultra_esq
+    global garra_fechada, garra_levantada
 
     hub = PrimeHub(broadcast_channel=TX_BRACO, observe_channels=[TX_CABECA])
     print(hub.system.name())
@@ -21,16 +21,18 @@ def setup():
     else:
         hub.light.blink(Color.ORANGE, [100,50,200,100])
 
-    motor_garra       = Motor(Port.C)
-    sensor_cor_frente = ColorSensor(Port.A)
+    motor_garra       = Motor(Port.B)
+    motor_vertical    = Motor(Port.A, Direction.COUNTERCLOCKWISE)
+    sensor_cor_frente = ColorSensor(Port.D)
 
     garra_fechada = False
+    garra_levantada = False
 
     hub.system.set_stop_button((Button.CENTER,))
     return hub
 
 def main(hub):
-    global garra_fechada
+    global garra_fechada, garra_levantada
 
     while True:
         comando = hub.ble.observe(TX_CABECA)
@@ -53,6 +55,21 @@ def main(hub):
                 garra.abre_garra(motor_garra)
                 garra_fechada = False
             hub.ble.broadcast((comando_bt.abri,))
+
+        elif comando == comando_bt.levanta_garra:
+            print("pediu levanto")
+            if not garra_levantada:
+                print("levantando")
+                garra.levanta_garra(motor_vertical)
+                garra_levantada = True
+            hub.ble.broadcast((comando_bt.levantei,))
+        elif comando == comando_bt.abaixa_garra:
+            print("pediu abaixo")
+            if garra_levantada:
+                print("abaixando")
+                garra.abaixa_garra(motor_vertical)
+                garra_levantada = False
+            hub.ble.broadcast((comando_bt.abaixei,))
             
         elif comando == comando_bt.ver_cor_passageiro:
             print("pediu cor")
@@ -62,7 +79,4 @@ def main(hub):
             print("pediu cor")
             cor = sensor_cor_frente.hsv()
             hub.ble.broadcast((comando_bt.hsv_passageiro, cores.Color2tuple(cor)))
-        elif comando == comando_bt.ver_distancias:
-            print("pediu dist")
-            dist_esq, dist_dir = ultra_esq.distance(), ultra_dir.distance()
-            hub.ble.broadcast((comando_bt.distancias, dist_esq, dist_dir))
+
