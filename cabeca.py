@@ -482,8 +482,9 @@ def main(hub):
             mapa_hsv = menu_calibracao(hub, sensor_cor_esq, sensor_cor_dir)
             cores.repl_calibracao(mapa_hsv)#, lado="esq")
             return
-
     hub.system.set_stop_button((Button.BLUETOOTH,))
+
+    resetar_garra(hub)
     while True:
         bipe_cabeca(hub)
 

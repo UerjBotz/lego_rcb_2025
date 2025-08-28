@@ -33,7 +33,7 @@ python -m venv .venv
 
 Após criar o ambiente virtual, ative-o.
 ```bash
-  .venv/bin/activate
+source .venv/bin/activate
 ```
 
 > **Nota**: Após ativar o ambiente, você verá o prefixo `(.venv)` antes do prompt do terminal, indicando que o ambiente virtual está ativo.

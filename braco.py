@@ -21,7 +21,7 @@ def setup():
     else:
         hub.light.blink(Color.ORANGE, [100,50,200,100])
 
-    motor_garra       = Motor(Port.B)
+    motor_garra       = Motor(Port.B, Direction.COUNTERCLOCKWISE)
     motor_vertical    = Motor(Port.A, Direction.COUNTERCLOCKWISE)
     sensor_cor_frente = ColorSensor(Port.D)
 

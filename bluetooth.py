@@ -27,6 +27,12 @@ def esperar_resposta(hub, esperado, canal=TX_BRACO):
             comando, *args = comando
     return args
 
+def resetar_garra(hub):
+    blt.levantar_garra(hub)
+    blt.fechar_garra(hub)
+    blt.abrir_garra(hub)
+    blt.abaixar_garra(hub)
+
 def fechar_garra(hub):
     print("fechar_garra:")
     hub.ble.broadcast((comando_bt.fecha_garra,))
