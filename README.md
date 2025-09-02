@@ -5,6 +5,7 @@ Repositório criado para o desafio RCB Challenge Kit da CBR 2024 (antigo SEK).
 ## Pré-requisitos
 
 Usamos o vscode no Ubuntu 24.04 com o pybricksdev para o upload e desenvolvimento do código e um SPIKE Prime Hub, da LEGO, como alvo.
+Não recomendamos o uso do windows.
 
 Certifique-se de ter o Python 3 instalado na sua máquina, na versão 3.9 ou maior. Você pode verificar a versão do Python com o comando:
 
