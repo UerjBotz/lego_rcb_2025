@@ -1,8 +1,7 @@
 from lib.polyfill    import Enum, heappop, heappush
 from cores           import cor
 
-
-tipo_celula = Enum("tipo_celula", ["RUA", "EDIFICIO"])
+tipo_celula = Enum("tipo_celula", ["RUA", "CRUZ", "BORDA", "ENTRADA"])
 
 tipo_parede = Enum("tipo_parede", ["PAREDE",
                                    "ENTRADA",
@@ -10,32 +9,23 @@ tipo_parede = Enum("tipo_parede", ["PAREDE",
 
 posicao_parede = Enum("posicao_parede", ["N", "L", "S", "O"])
 
-posicao_desembarque_adulto = {
-    "AZUL":     ((4, 2)),
-    "VERDE":    ((2, 4)),
-    "VERMELHO": ((2, 2)),
-    "MARROM":   ((0, 2)),
-}
-
-posicao_desembarque_crianca = {
-    "AZUL":   ((0, 4)),
-    "VERDE":  ((0, 0), (2, 0), (4, 0)),
-    "MARROM": ((4, 4)),
-}
-
-class Edificio:
-    def __init__(self, nome, cor, paredes):
-        self.nome = nome
-        self.cor  = cor
-        self.tipo = tipo_celula.EDIFICIO
-        self.paredes = paredes
-        self.ocupada = True
+"""
+map = [
+    [BORDA, BORDA,]
+]
+    
+"""
 
 class Rua:
-    def __init__(self):
-        self.ocupada = False
+    def __init__(self, cruz=True):
         self.tipo = tipo_celula.RUA
-    
+        self.cruz = cruz
+
+class Borda:
+    def __init__(self, entrada=True):
+        self.tipo = tipo_celula.BORDA
+        self.entrada = entrada
+
 # celula = Edificio | Rua
 
 def imprime_matriz(matriz):
@@ -44,10 +34,10 @@ def imprime_matriz(matriz):
 
     for linha in matriz:
         for celula in linha:
-            if celula.tipo == tipo_celula.EDIFICIO:
-                texto = celula.nome
+            if celula.tipo == tipo_celula.RUA:
+                texto = 'ENTRADA' if celula.borda else 'RUA'
             else:
-                texto = "OBSTACULO" if celula.ocupada else "RUA"
+                texto = 'CRUZAMENTO' if self.borda
             print(texto.ljust(largura_maxima), end=" ")
         print()
 
