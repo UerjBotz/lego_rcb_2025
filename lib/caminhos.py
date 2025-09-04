@@ -1,7 +1,7 @@
 from lib.polyfill    import Enum, heappop, heappush
 from cores           import cor
 
-tipo_celula = Enum("tipo_celula", ["RUA", "CRUZ", "BORDA", "ENTRADA"])
+tipo_celula = Enum("tipo_celula", ["RUA", "CRUZ", "BORDA", "ENTRADA", "NADA"])
 
 tipo_parede = Enum("tipo_parede", ["PAREDE",
                                    "ENTRADA",
@@ -11,10 +11,19 @@ posicao_parede = Enum("posicao_parede", ["N", "L", "S", "O"])
 
 """
 map = [
-    [BORDA, BORDA,]
+    [  BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA,   BORDA]
+    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
+    [  BORDA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,   BORDA]
+    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
+    [  BORDA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,   BORDA]
+    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
+    [  BORDA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,   BORDA]
+    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
+    [  BORDA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,   BORDA]
+    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
+    [  BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA,   BORDA]
 ]
-    
-"""
+    """
 
 class Rua:
     def __init__(self, cruz=True):
@@ -34,10 +43,7 @@ def imprime_matriz(matriz):
 
     for linha in matriz:
         for celula in linha:
-            if celula.tipo == tipo_celula.RUA:
-                texto = 'ENTRADA' if celula.borda else 'RUA'
-            else:
-                texto = 'CRUZAMENTO' if self.borda
+            texto = str(celula)
             print(texto.ljust(largura_maxima), end=" ")
         print()
 
@@ -64,86 +70,6 @@ def coloca_passageiro(edificio: Edificio, entrada: str): #ver como faz para esco
     edificio.paredes[idx] = tipo_parede.ENTRADA_COM_CANO
     return True
 
-bakery = Edificio(
-    nome = "BAKERY",
-    cor = cor.MARROM,
-    paredes = {
-        posicao_parede.N: tipo_parede.PAREDE,
-        posicao_parede.S: tipo_parede.ENTRADA,
-        posicao_parede.L: tipo_parede.PAREDE,
-        posicao_parede.O: tipo_parede.ENTRADA
-    }
-)
-school = Edificio(
-    nome = "SCHOOL",
-    cor = cor.AZUL,
-    paredes = {
-        posicao_parede.N: tipo_parede.PAREDE,
-        posicao_parede.S: tipo_parede.ENTRADA,
-        posicao_parede.L: tipo_parede.PAREDE,
-        posicao_parede.O: tipo_parede.ENTRADA
-    }
-)
-drugstore = Edificio(
-    nome = "DRUGSTORE",
-    cor = cor.VERMELHO,
-    paredes = {
-        posicao_parede.N: tipo_parede.PAREDE,
-        posicao_parede.S: tipo_parede.PAREDE,
-        posicao_parede.L: tipo_parede.ENTRADA,
-        posicao_parede.O: tipo_parede.ENTRADA
-    }
-)
-city_hall = Edificio(
-    nome = "CITY HALL",
-    cor = cor.VERDE,
-    paredes = {
-        posicao_parede.N: tipo_parede.ENTRADA,
-        posicao_parede.S: tipo_parede.ENTRADA,
-        posicao_parede.L: tipo_parede.PAREDE,
-        posicao_parede.O: tipo_parede.PAREDE
-    }
-)
-museum = Edificio(
-    nome = "MUSEUM",
-    cor = cor.AZUL,
-    paredes = {
-        posicao_parede.N: tipo_parede.ENTRADA,
-        posicao_parede.S: tipo_parede.PAREDE,
-        posicao_parede.L: tipo_parede.ENTRADA,
-        posicao_parede.O: tipo_parede.PAREDE
-    }
-)
-library = Edificio(
-    nome = "LIBRARY",
-    cor = cor.VERMELHO,
-    paredes = {
-        posicao_parede.N: tipo_parede.ENTRADA,
-        posicao_parede.S: tipo_parede.PAREDE,
-        posicao_parede.L: tipo_parede.ENTRADA,
-        posicao_parede.O: tipo_parede.PAREDE
-    }
-)
-park_aberto = lambda: Edificio(
-    nome = "PARK",
-    cor = cor.VERDE,
-    paredes = {
-        posicao_parede.N: tipo_parede.PAREDE,
-        posicao_parede.S: tipo_parede.PAREDE,
-        posicao_parede.L: tipo_parede.ENTRADA,
-        posicao_parede.O: tipo_parede.PAREDE
-    }
-)
-park_fechado = lambda: Edificio(
-    nome = "PARK",
-    cor = cor.VERDE,
-    paredes = {
-        posicao_parede.N: tipo_parede.PAREDE,
-        posicao_parede.S: tipo_parede.PAREDE,
-        posicao_parede.L: tipo_parede.PAREDE,
-        posicao_parede.O: tipo_parede.PAREDE
-    }
-)
 #! ver se lambdar os outros também
 
 mapa = [
