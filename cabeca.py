@@ -27,7 +27,6 @@ PISTA_TODA = TAM_BLOCO*6
 DIST_EIXO_SENSOR = 80 #mm
 DIST_EIXO_SENS_DIST = 45 #mm   #! checar
 
-DIST_PASSAGEIRO_RUA = 220 #! checar
 
 
 #! checar stall: jogar exceção
@@ -158,23 +157,28 @@ def ver_azul_lado():
     return ((cores.azul_unificado(*esq) ^ cores.azul_unificado(*dir)),
             esq, dir)
 
+def ver_limite():
+    esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
+    return ((cores.vermelho_unificado(*esq) or cores.vermelho_unificado(*dir) or
+             cores.azul_unificado(*esq) or cores.azul_unificado(*dir)), esq, dir)
+
 def verificar_cor(func_cor) -> Callable[None, tuple[bool, int]]: # type: ignore
     def f():
         esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
         return (func_cor(*esq) or func_cor(*dir), esq, dir)
     return f
 
-def ver_passageiro_perto():
-    #print("ver_passageiro_perto")
-    dist_esq, dist_dir = ler_ultrassons()
-    return ((dist_esq < DIST_PASSAGEIRO_RUA or dist_dir < DIST_PASSAGEIRO_RUA),
-            dist_esq, dist_dir)
+def ver_cubo_perto():
+    #print("ver_cubo_perto")
+    esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
+    return ((cores.cinza_unificado(*esq) or cores.cinza_unificado(*dir)), esq, dir)
 
-def nao_ver_passageiro_perto():
-    #print("nao_ver_passageiro_perto")
-    dist_esq, dist_dir = ler_ultrassons()
-    return ((dist_esq < DIST_PASSAGEIRO_RUA and dist_dir < DIST_PASSAGEIRO_RUA),
-            dist_esq, dist_dir)
+
+def ver_obstaculo():
+    #print("ver_obstaculo")
+    esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
+    return ((cores.marrom_unificado(*esq) or cores.marrom_unificado(*dir)), esq, dir)
+
 
 def andar_ate_idx(*conds_parada: Callable, dist_max=PISTA_TODA) -> tuple[bool, tuple[Any]]: # type: ignore
     rodas.reset()
@@ -207,6 +211,8 @@ def andar_ate_bool(sucesso, neutro=nunca_parar, fracasso=ver_nao_pista,
         else: 
             print(res)
             assert False
+
+#-------------------------------------------------------------------------------------
 
 def alinha_limite(max_tentativas=3):
     for i in range(max_tentativas):
@@ -329,63 +335,53 @@ def alinhar(max_tentativas=4, virar=True, vel=80, vel_ang=20, giro_max=70) -> No
     return
         
 
-def pegar_passageiro() -> bool:
+def pegar_cubo() -> Color:
     global orientacao_estimada
+    print("pegar_cubo:")
 
-    print("pegar_passageiro:")
     with mudar_velocidade(rodas, 50):
-        res, info = andar_ate_idx(ver_passageiro_perto,
-                                  verificar_cor(cores.beco_unificado),
-                                  verificar_cor(cores.parede_unificado),
-                                  dist_max=TAM_BLOCO*4)
-        if res == 1:
-            (dist_esq, dist_dir) = info
-            if dist_esq < dist_dir:
-                dist = dist_esq
-                virar, desvirar = virar_esquerda, virar_direita
-            else:
-                dist = dist_dir
-                virar, desvirar = virar_direita, virar_esquerda
+        res, info = andar_ate_idx(
+            ver_cubo_perto,   # sucesso - achou quadrado cinza
+            ver_obstaculo,    # neutro - cubo marrom (ignorar/desviar)
+            ver_limite,       # fracasso - vermelho/azul = sair da pista
+            dist_max=TAM_BLOCO*4
+        )
 
+        if res == 1:  
+            print("pegar_cubo: quadrado cinza detectado")
+            parar()
             blt.abrir_garra(hub)
-            with mudar_velocidade(rodas, *vels_padrao):
-                dar_re(DIST_EIXO_SENS_DIST-20) #! desmagificar
-                virar()
-                rodas.straight(dist)
-                blt.fechar_garra(hub)
-            cor_cano = blt.ver_cor_passageiro(hub)
-            print(f"pegar_passageiro: cor_cano {cores.cor(cor_cano)}")
 
-            if cor_cano == cores.cor.BRANCO or cor_cano == cores.cor.NENHUMA: #!
-                with mudar_velocidade(rodas, *vels_padrao):
-                    blt.abrir_garra(hub)
-                    rodas.straight(-dist)
-                    desvirar()
-                return False
-            return True
-        elif res == 2:
-            (cor_esq, cor_dir) = info
-            print(f"pegar_passageiro: vermelho {cor_esq=}, {cor_dir=}")
-            with mudar_velocidade(rodas, *vels_padrao):
-                dar_re_meio_bloco()
-                dar_meia_volta()
+            rodas.straight(DIST_EIXO_SENS_DIST - 10)
+            blt.fechar_garra(hub)
 
-            return False # é pra ter chegado no vermelho
-        elif res == 3:
-            (cor_esq, cor_dir) = info
-            print(f"pegar_passageiro: nao_pista {cor_esq=}, {cor_dir=}")
-            with mudar_velocidade(rodas, *vels_padrao):
-                dar_re_meio_bloco()
-                dar_meia_volta()
+            cor_cubo = blt.ver_cor_cubo(hub)
+            print(f"pegar_cubo: cor detectada = {cores.cor(cor_cubo)}")
 
-            return False #! falhar mais alto
-        else:
-            print(f"pegar_passageiro: andou muito {rodas.distance()}")
-            with mudar_velocidade(rodas, *vels_padrao):
-                dar_re_meio_bloco()
-                dar_meia_volta()
+            if cor_cubo in (cores.cor.BRANCO, cores.cor.NENHUMA):
+                print("pegar_cubo: cubo branco ou inválido - descartar")
+                blt.abrir_garra(hub)
+                dar_re(50)
+                return cores.cor.NENHUMA
 
-            return False # chegou na distância máxima
+            return cor_cubo
+
+        elif res == 2:  
+            print("pegar_cubo: obstáculo encontrado - ignorar")
+            return cores.cor.NENHUMA
+
+        elif res == 3:  
+            print("pegar_cubo: limite detectado - abortar")
+            dar_re_meio_bloco()
+            dar_meia_volta()
+            return cores.cor.NENHUMA
+
+        else: 
+            print(f"pegar_cubo: andou demais {rodas.distance()}mm - abortar")
+            dar_re_meio_bloco()
+            dar_meia_volta()
+            return cores.cor.NENHUMA
+
 
 def pegar_primeiro_passageiro() -> Color:
     global orientacao_estimada
