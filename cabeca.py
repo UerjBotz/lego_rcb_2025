@@ -474,7 +474,7 @@ def main(hub):
             return
     hub.system.set_stop_button((Button.BLUETOOTH,))
 
-    resetar_garra(hub)
+    blt.resetar_garra(hub)
     while True:
         bipe_cabeca(hub)
 
