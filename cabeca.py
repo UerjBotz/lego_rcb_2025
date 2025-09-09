@@ -27,8 +27,6 @@ PISTA_TODA = TAM_BLOCO*6
 DIST_EIXO_SENSOR = 80 #mm
 DIST_EIXO_SENS_DIST = 45 #mm   #! checar
 
-DIST_PASSAGEIRO_RUA = 220 #! checar
-
 
 #! checar stall: jogar exceção
 #! checar cor errada no azul
@@ -164,17 +162,9 @@ def verificar_cor(func_cor) -> Callable[None, tuple[bool, int]]: # type: ignore
         return (func_cor(*esq) or func_cor(*dir), esq, dir)
     return f
 
-def ver_passageiro_perto():
-    #print("ver_passageiro_perto")
-    dist_esq, dist_dir = ler_ultrassons()
-    return ((dist_esq < DIST_PASSAGEIRO_RUA or dist_dir < DIST_PASSAGEIRO_RUA),
-            dist_esq, dist_dir)
-
-def nao_ver_passageiro_perto():
-    #print("nao_ver_passageiro_perto")
-    dist_esq, dist_dir = ler_ultrassons()
-    return ((dist_esq < DIST_PASSAGEIRO_RUA and dist_dir < DIST_PASSAGEIRO_RUA),
-            dist_esq, dist_dir)
+def ver_cubo_perto() -> bool:
+    cor = blt.ver_cor_cubo(hub)
+    return cor != cores.NENHUMA
 
 def andar_ate_idx(*conds_parada: Callable, dist_max=PISTA_TODA) -> tuple[bool, tuple[Any]]: # type: ignore
     rodas.reset()

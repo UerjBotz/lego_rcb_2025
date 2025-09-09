@@ -71,12 +71,12 @@ def main(hub):
                 garra_levantada = False
             hub.ble.broadcast((comando_bt.abaixei,))
             
-        elif comando == comando_bt.ver_cor_passageiro:
+        elif comando == comando_bt.ver_cor_cubo:
             print("pediu cor")
             cor = sensor_cor_frente.color() #! reclassificar co hsv se der NONE
-            hub.ble.broadcast((comando_bt.cor_passageiro, cores.Color2cor(cor)))
-        elif comando == comando_bt.ver_hsv_passageiro:
+            hub.ble.broadcast((comando_bt.cor_cubo, cores.Color2cor(cor)))
+        elif comando == comando_bt.ver_hsv_cubo:
             print("pediu cor")
             cor = sensor_cor_frente.hsv()
-            hub.ble.broadcast((comando_bt.hsv_passageiro, cores.Color2tuple(cor)))
+            hub.ble.broadcast((comando_bt.hsv_cubo, cores.Color2tuple(cor)))
 
