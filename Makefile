@@ -3,10 +3,6 @@ PYBRICKS = .venv/bin/python3 -m pybricksdev
 _BRACO  = .__main_braco__.py
 _CABECA = .__main_cabeca__.py
 
-NOME_CABECA = "spike1"
-NOME_BRACO  = "spike0"
-
-
 .PHONY:
 all: cabeca_imediato braco_imediato clean
 

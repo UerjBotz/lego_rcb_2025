@@ -9,17 +9,19 @@ from bluetooth import comando_bt, TX_BRACO, TX_CABECA
 import cores
 import garra
 
+def assert_hub(hub, nome_esperado):
+    print(hub.system.name())
+    while hub.system.name() != nome_esperado:
+        hub.speaker.beep(frequency=1024)
+        wait(200)
+
 def setup():
     global hub, motor_garra, motor_vertical, sensor_cor_frente, ultra_dir, ultra_esq
     global garra_fechada, garra_levantada
 
     hub = PrimeHub(broadcast_channel=TX_BRACO, observe_channels=[TX_CABECA])
-    print(hub.system.name())
-    while hub.system.name() != "spike0":
-        hub.speaker.beep(frequency=1024)
-        wait(200)
-    else:
-        hub.light.blink(Color.ORANGE, [100,50,200,100])
+    assert_hub(hub, "spike0")
+    hub.light.blink(Color.ORANGE, [100,50,200,100])
 
     motor_garra       = Motor(Port.B, Direction.COUNTERCLOCKWISE)
     motor_vertical    = Motor(Port.A, Direction.COUNTERCLOCKWISE)

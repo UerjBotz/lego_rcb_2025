@@ -34,6 +34,11 @@ DIST_PASSAGEIRO_RUA = 220 #! checar
 #! checar cor errada no azul
 #! tem um lugar começo do achar azul que tem que dar ré
 
+def assert_hub(hub, nome_esperado):
+    print(hub.system.name())
+    while hub.system.name() != nome_esperado:
+        hub.speaker.beep(frequency=1024)
+        wait(200)
 
 def setup():
     global hub, rodas
@@ -43,12 +48,9 @@ def setup():
     
     orientacao_estimada = ""
     hub = PrimeHub(broadcast_channel=blt.TX_CABECA, observe_channels=[blt.TX_BRACO])
-    print(hub.system.name())
-    while hub.system.name() != "spike1":
-        hub.speaker.beep(frequency=1024)
-        wait(200)
-    else:
-        hub.light.blink(Color.RED, [100,50,200,100])
+
+    assert_hub(hub, "spike0")
+    hub.light.blink(Color.RED, [100,50,200,100])
 
     hub.display.orientation(Side.BOTTOM)
     hub.system.set_stop_button((Button.CENTER, Button.BLUETOOTH))
