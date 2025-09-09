@@ -98,9 +98,6 @@ def inverte_orientacao():
     if orientacao_estimada == "L": orientacao_estimada = "O"
     if orientacao_estimada == "O": orientacao_estimada = "L"
 
-def ler_ultrassons():
-    return sensor_ultra_esq.distance(), sensor_ultra_dir.distance()
-
 def dar_meia_volta():
     inverte_orientacao()
     rodas.turn(180)
@@ -162,6 +159,12 @@ def verificar_cor(func_cor) -> Callable[None, tuple[bool, int]]: # type: ignore
         return (func_cor(*esq) or func_cor(*dir), esq, dir)
     return f
 
+def _ver_passageiro_perto():
+    #print("_ver_passageiro_perto")
+    dist_esq, dist_dir = ler_ultrassons()
+    return ((dist_esq < DIST_PASSAGEIRO_RUA or dist_dir < DIST_PASSAGEIRO_RUA),
+            dist_esq, dist_dir)
+
 def ver_cubo_perto() -> bool:
     cor = blt.ver_cor_cubo(hub)
     return cor != cores.NENHUMA
@@ -220,11 +223,11 @@ def achar_limite() -> tuple[tuple[Color, hsv], tuple[Color, hsv]]: # type: ignor
     else:
         return cores.todas(sensor_cor_esq, sensor_cor_dir)
 
-def achar_azul() -> bool:
+def _achar_azul() -> bool:
     esq, dir = achar_limite(); alinha_limite() # anda reto até achar o limite
 
     if cores.beco_unificado(*esq) or cores.beco_unificado(*dir): #! beco é menor que os outros blocos
-        print(f"achar_azul: beco")
+        print(f"_achar_azul: beco")
 
         dar_re_meio_bloco()
         dar_re(TAM_BLOCO_BECO) 
@@ -233,33 +236,33 @@ def achar_azul() -> bool:
 
         #! lidar com os casos de cada visto (andar_ate[...])
         esq, dir = achar_limite(); alinha_limite() # anda reto até achar o limite
-        print(f"achar_azul: beco indo azul") 
+        print(f"_achar_azul: beco indo azul") 
 
         if cores.parede_unificado(*esq) or cores.parede_unificado(*dir): dar_meia_volta()
 
         #! lidar com os casos de cada visto (andar_ate[...])
         esq, dir = achar_limite() # anda reto até achar o limite #! alinha?
-        print(f"achar_azul: beco indo azul certeza")
+        print(f"_achar_azul: beco indo azul certeza")
 
         return cores.certificar(sensor_cor_esq, sensor_cor_dir, cores.azul_unificado)
     elif cores.parede_unificado(*esq) or cores.parede_unificado(*dir):
-        print(f"achar_azul: parede")
+        print(f"_achar_azul: parede")
 
         dar_re_meio_bloco()
         choice((virar_direita, virar_esquerda))() # divertido      
 
         return False
     else: #azul
-        print("achar_azul: vi azul")
+        print("_achar_azul: vi azul")
         #! deixar mais andar_ate(ver_azul, ver_nao_branco) switch()
         esq, dir = achar_limite() # anda reto até achar o limite #! alinha?
 
         if cores.certificar(sensor_cor_esq, sensor_cor_dir, cores.azul_unificado):
-            print("achar_azul: azul mesmo")
+            print("_achar_azul: azul mesmo")
             dar_re(TAM_BLOCO_BECO*3//8)
             return True
         else:
-            print("achar_azul: não azul")
+            print("_achar_azul: não azul")
             dar_re_meio_bloco()
             choice((virar_direita, virar_esquerda))() #!
             return False
@@ -319,12 +322,12 @@ def alinhar(max_tentativas=4, virar=True, vel=80, vel_ang=20, giro_max=70) -> No
     return
         
 
-def pegar_passageiro() -> bool:
+def _pegar_passageiro() -> bool:
     global orientacao_estimada
 
-    print("pegar_passageiro:")
+    print("_pegar_passageiro:")
     with mudar_velocidade(rodas, 50):
-        res, info = andar_ate_idx(ver_passageiro_perto,
+        res, info = andar_ate_idx(_ver_passageiro_perto,
                                   verificar_cor(cores.beco_unificado),
                                   verificar_cor(cores.parede_unificado),
                                   dist_max=TAM_BLOCO*4)
@@ -344,7 +347,7 @@ def pegar_passageiro() -> bool:
                 rodas.straight(dist)
                 blt.fechar_garra(hub)
             cor_cano = blt.ver_cor_passageiro(hub)
-            print(f"pegar_passageiro: cor_cano {cores.cor(cor_cano)}")
+            print(f"_pegar_passageiro: cor_cano {cores.cor(cor_cano)}")
 
             if cor_cano == cores.cor.BRANCO or cor_cano == cores.cor.NENHUMA: #!
                 with mudar_velocidade(rodas, *vels_padrao):
@@ -355,7 +358,7 @@ def pegar_passageiro() -> bool:
             return True
         elif res == 2:
             (cor_esq, cor_dir) = info
-            print(f"pegar_passageiro: vermelho {cor_esq=}, {cor_dir=}")
+            print(f"_pegar_passageiro: vermelho {cor_esq=}, {cor_dir=}")
             with mudar_velocidade(rodas, *vels_padrao):
                 dar_re_meio_bloco()
                 dar_meia_volta()
@@ -363,23 +366,23 @@ def pegar_passageiro() -> bool:
             return False # é pra ter chegado no vermelho
         elif res == 3:
             (cor_esq, cor_dir) = info
-            print(f"pegar_passageiro: nao_pista {cor_esq=}, {cor_dir=}")
+            print(f"_pegar_passageiro: nao_pista {cor_esq=}, {cor_dir=}")
             with mudar_velocidade(rodas, *vels_padrao):
                 dar_re_meio_bloco()
                 dar_meia_volta()
 
             return False #! falhar mais alto
         else:
-            print(f"pegar_passageiro: andou muito {rodas.distance()}")
+            print(f"_pegar_passageiro: andou muito {rodas.distance()}")
             with mudar_velocidade(rodas, *vels_padrao):
                 dar_re_meio_bloco()
                 dar_meia_volta()
 
             return False # chegou na distância máxima
 
-def pegar_primeiro_passageiro() -> Color:
+def _pegar_primeiro_passageiro() -> Color:
     global orientacao_estimada
-    print("pegar_primeiro_passageiro:")
+    print("_pegar_primeiro_passageiro:")
     #! a cor é pra ser azul
     virar_direita()
     deu, _ = andar_ate_bool(verificar_cor(cores.beco_unificado),
@@ -390,9 +393,9 @@ def pegar_primeiro_passageiro() -> Color:
     dar_re_meio_bloco()
     dar_meia_volta()
 
-    pegou = pegar_passageiro()
+    pegou = _pegar_passageiro()
     while not pegou:
-        pegou = pegar_passageiro()
+        pegou = _pegar_passageiro()
     
     return blt.ver_cor_passageiro(hub)
 
@@ -460,21 +463,7 @@ def menu_calibracao(hub, sensor_esq, sensor_dir,
             wait(100)
             return mapa_hsv
 
-
-def main(hub):
-    global orientacao_estimada
-    crono = StopWatch()
-    while crono.time() < 100: #! ativar calibração quando for usar
-        botões = hub.buttons.pressed()
-        if botao_calibrar in botões:
-            bipe_calibracao(hub)
-            #! levar os dois sensores em consideração separadamente
-            mapa_hsv = menu_calibracao(hub, sensor_cor_esq, sensor_cor_dir)
-            cores.repl_calibracao(mapa_hsv)#, lado="esq")
-            return
-    hub.system.set_stop_button((Button.BLUETOOTH,))
-
-    blt.resetar_garra(hub)
+def _loop_principal_antigo(hub):
     while True:
         bipe_cabeca(hub)
 
@@ -483,10 +472,10 @@ def main(hub):
         achou_azul = False
         alinhar()
         while not achou_azul:
-            achou_azul = achar_azul()
+            achou_azul = _achar_azul()
         print(f"{orientacao_estimada=}") #assert ori == "L"
         orientacao_estimada = "L"
-        cor = pegar_primeiro_passageiro()
+        cor = _pegar_primeiro_passageiro()
 
         achar_limite(); alinha_limite() #! lidar com os casos de cada visto (andar_ate[...])
 
@@ -520,3 +509,49 @@ def main(hub):
         dar_re(TAM_BLOCO//2)
 
         seguir_caminho(fim, pos)
+
+def posicionamento_inicial(hub):
+    achar_vermelho(hub)
+    achar_azul(hub)
+    reseta_xy(hub) # vai para o 0,0 do verde
+    return descobrir_cor_caçambas(hub)
+
+def procura_inicial(hub, xy, caçambas): #! considerar inimigo
+    entra_primeira_rua(hub)
+
+    x, _ = xy #! para procura genérico, usar y também
+    i, extra = andar_ate_idx(ver_cubo_perto, ver_nao_pista)
+    while i == 2:
+        x += 2 #! para procura genérico, considerar orientação
+        i, extra = andar_ate_idx(ver_cubo_perto, ver_nao_pista)
+    assert i == 1
+
+    cor = extra
+    if cor in caçambas:
+        pegar_cubo(hub)
+        dar_re_até_verde(hub, xy) #! fazer_caminho_contrário(hub) #! voltar_para_verde(hub, xy)
+        return cor, xy
+    else:
+        fazer_caminho_contrário(hub) #! voltar_para_verde(hub, xy)
+        xy = andar_1_quarteirão_no_eixo_y(hub, xy)
+        return procura_inicial(hub, xy, caçambas)
+
+def main(hub):
+    global orientacao_estimada
+    crono = StopWatch()
+    while crono.time() < 100: #! ativar calibração quando for usar
+        botões = hub.buttons.pressed()
+        if botao_calibrar in botões:
+            bipe_calibracao(hub)
+            #! levar os dois sensores em consideração separadamente
+            mapa_hsv = menu_calibracao(hub, sensor_cor_esq, sensor_cor_dir)
+            cores.repl_calibracao(mapa_hsv)#, lado="esq")
+            return
+    hub.system.set_stop_button((Button.BLUETOOTH,))
+
+    blt.resetar_garra(hub)
+    
+    caçambas = posicionamento_inicial(hub)
+    cor, xy = procura_inicial(hub, 00, caçambas)
+    coloca_cubo_na_caçamba(hub, cor, xy, caçambas)
+    procura(hub)
