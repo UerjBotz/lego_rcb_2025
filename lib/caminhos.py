@@ -1,41 +1,52 @@
 from lib.polyfill    import Enum, heappop, heappush
 from cores           import cor
 
-tipo_celula = Enum("tipo_celula", ["RUA", "CRUZ", "BORDA", "ENTRADA", "NADA"])
+tipo_celula = Enum("tipo_celula", ["RUA",
+                                   "CRUZ",
+                                   "NADA",
+                                   "SAFE"])
 
 tipo_parede = Enum("tipo_parede", ["PAREDE",
-                                   "ENTRADA",
-                                   "ENTRADA_COM_CANO"])
+                                   "ENTRADA"])
 
 posicao_parede = Enum("posicao_parede", ["N", "L", "S", "O"])
 
 """
 map = [
-    [  BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA,   BORDA]
-    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
-    [  BORDA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,   BORDA]
-    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
-    [  BORDA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,   BORDA]
-    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
-    [  BORDA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,   BORDA]
-    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
-    [  BORDA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,   BORDA]
-    [ENTRADA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ, ENTRADA]
-    [  BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA, BORDA,   BORDA]
+    [SAFE,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA]
+    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
+    [SAFE,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA]
+    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
+    [SAFE,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA]
+    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
+    [SAFE,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA]
+    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
+    [SAFE,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA]
+    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
+    [SAFE,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA]
 ]
-    """
+"""
 
 class Rua:
-    def __init__(self, cruz=True):
+    def __init__(self):
         self.tipo = tipo_celula.RUA
-        self.cruz = cruz
+        self.ocupada = False
+    def __str__(self):
+        return 'rua'
 
-class Borda:
-    def __init__(self, entrada=True):
-        self.tipo = tipo_celula.BORDA
-        self.entrada = entrada
+class Safe:
+    def __init__(self):
+        self.tipo = tipo_celula.SAFE
+    def __str__(self):
+        return 'safe'
 
-# celula = Edificio | Rua
+class Cruz:
+    def __init__(self):
+        self.tipo = tipo_celula.CRUZ
+    def __str__(self):
+        return 'cruz'
+
+# celula = Rua | Cruzamento | Safezone | Void
 
 def imprime_matriz(matriz):
     """Imprime a matriz de forma alinhada."""
@@ -47,37 +58,18 @@ def imprime_matriz(matriz):
             print(texto.ljust(largura_maxima), end=" ")
         print()
 
-def coloca_obstaculo(x, y):
-    if mapa[x][y].tipo == tipo_celula.EDIFICIO: return #! falhar mais alto
-
-    mapa[x][y].ocupada = True
-
-def tira_obstaculo(x, y):
-    if mapa[x][y].tipo == tipo_celula.EDIFICIO: return
-
-    mapa[x][y].ocupada = False
-
-def coloca_passageiro(edificio: Edificio, entrada: str): #ver como faz para escolher a entrada para ocupar
-    if edificio.tipo == tipo_celula.RUA: return False
-    if entrada not in "NSLO":            return False
-
-    idx = posicao_parede[entrada]
-    if edificio.paredes[idx] != tipo_parede.ENTRADA: return False
-
-    if all(map(lambda p: p != tipo_parede.ENTRADA, edificio.paredes)):
-        return False #! falhar mais alto
-
-    edificio.paredes[idx] = tipo_parede.ENTRADA_COM_CANO
-    return True
-
 #! ver se lambdar os outros também
 
 mapa = [
-    [park_aberto(),   Rua(),  bakery,     Rua(),  school,     Rua()],
-    [park_fechado(),  Rua(),  Rua(),      Rua(),  Rua(),      Rua()],
-    [park_aberto(),   Rua(),  drugstore,  Rua(),  city_hall,  Rua()],
-    [park_fechado(),  Rua(),  Rua(),      Rua(),  Rua(),      Rua()],
-    [park_aberto(),   Rua(),  museum,     Rua(),  library,    Rua()],
+    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
+    [Safe(),  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua()],
+    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
+    [Safe(),  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua()],
+    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
+    [Safe(),  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua()],
+    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
+    [Safe(),  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua()],
+    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
 ]
 
 ## implementação do A* (adaptada de <https://www.geeksforgeeks.org/a-search-algorithm-in-python/>)
@@ -101,13 +93,18 @@ def dist_manhatan(posicao_atual, destino):
     return abs(atual_x - dest_x) + abs(atual_y - dest_y)
 
 def dentro_dos_limites(matriz, cell):
-    x, y = cell
-    return 0 <= x < len(matriz) and 0 <= y < len(matriz[0])
+    y, x = cell
+    return 0 <= y < len(matriz) and 0 <= x < len(matriz[0])
 
 def celula_livre(grid, cell):
-    row, col = cell
-    return not grid[row][col].ocupada
+    y, x = cell
+    if not grid[y][x]: # Nada lá. Não faz sentido dizer que está livre
+        return False
+    if grid[y][x] == tipo_celula.RUA: # Rua. Pode ter um cubo lá
+        return not grid[y][x].ocupada
+    return True # Safezone ou Cruzamento. Vai estar livre sempre
 
+#!
 def eh_destino(src, dest): #! acho que dá pra mudar isso pra parar em frente à porta
     row, col = src
     return row == dest[0] and col == dest[1]
