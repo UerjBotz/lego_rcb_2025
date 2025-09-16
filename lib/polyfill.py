@@ -78,8 +78,6 @@ class Enum():
 
     def __len__(self):
         return len(self.constant_map)
-
-    def __str__(self)
     
     #! faltam esses, e talvez criar um tipo interno pra os elementos
     #! retornar esse tipo novo em vez dos números direto
