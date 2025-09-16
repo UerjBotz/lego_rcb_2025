@@ -510,6 +510,34 @@ def _loop_principal_antigo(hub):
 
         seguir_caminho(fim, pos)
 
+def procura_linha(amplitude=15):
+    rodas.drive(30, amplitude)
+
+    rodas.drive(30, -amplitude)
+
+    rodas.drive(30, 0)
+
+
+
+def achar_vermelho(hub):
+    while True:
+        esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
+        
+        if cores.beco_unificado(*esq) and cores.beco_unificado(*dir):
+            rodas.stop()
+            return True  
+
+        elif cores.beco_unificado(*esq):
+            rodas.drive(30,20)
+            dar_re(30)
+        elif cores.beco_unificado(*dir):
+            rodas.drive(30,-20)
+            dar_re(30)
+        else:
+            procura_linha(amplitude=15)  
+
+
+
 def posicionamento_inicial(hub):
     achar_vermelho(hub)
     achar_azul(hub)
@@ -550,8 +578,9 @@ def main(hub):
     hub.system.set_stop_button((Button.BLUETOOTH,))
 
     blt.resetar_garra(hub)
+    achar_vermelho(hub)
     
-    caçambas = posicionamento_inicial(hub)
+    '''caçambas = posicionamento_inicial(hub)
     cor, xy = procura_inicial(hub, 00, caçambas)
     coloca_cubo_na_caçamba(hub, cor, xy, caçambas)
-    procura(hub)
+    procura(hub)'''
