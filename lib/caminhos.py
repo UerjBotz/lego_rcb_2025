@@ -1,5 +1,4 @@
-from lib.polyfill    import Enum, heappop, heappush
-from cores           import cor
+from polyfill    import Enum, heappop, heappush
 
 tipo_celula = Enum("tipo_celula", ["RUA",
                                    "CRUZ",
@@ -11,28 +10,12 @@ tipo_parede = Enum("tipo_parede", ["PAREDE",
 
 posicao_parede = Enum("posicao_parede", ["N", "L", "S", "O"])
 
-"""
-map = [
-    [SAFE,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA]
-    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
-    [SAFE,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA]
-    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
-    [SAFE,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA]
-    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
-    [SAFE,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA]
-    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
-    [SAFE,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA,  NADA,   RUA]
-    [SAFE,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ,   RUA,  CRUZ]
-    [SAFE,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA,  NADA]
-]
-"""
-
 class Rua:
     def __init__(self):
         self.tipo = tipo_celula.RUA
         self.ocupada = False
     def __str__(self):
-        return 'rua'
+        return 'rua '
 
 class Safe:
     def __init__(self):
@@ -55,7 +38,7 @@ def imprime_matriz(matriz):
     for linha in matriz:
         for celula in linha:
             texto = str(celula)
-            print(texto.ljust(largura_maxima), end=" ")
+            print(texto, end=" ")
         print()
 
 #! ver se lambdar os outros também
@@ -324,3 +307,4 @@ def achar_movimentos(pos_ini, pos_fim, orientacao):
     print(f"achar_movimentos: {caminho_rel=}")
 
     return (movimento_relativo(caminho_rel, orientacao), orientacao_final) #! tratar orientação final None e caminho vazio no chamador
+
