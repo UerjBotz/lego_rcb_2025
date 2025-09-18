@@ -148,6 +148,12 @@ def ver_nao_pista() -> tuple[bool, tuple[Color, hsv], tuple[Color, hsv]]: # type
     return ((not cores.pista_unificado(*esq) or not cores.pista_unificado(*dir)),
             esq, dir)
 
+def ver_nao_verde() -> tuple[bool, tuple[Color, hsv], tuple[Color, hsv]]: # type: ignore
+    #! usar verificar_cor em vez disso?
+    esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
+    return ((not cores.verde_unificado(*esq) or not cores.verde_unificado(*dir)),
+            esq, dir)
+
 def ver_azul_lado():
     esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
     return ((cores.azul_unificado(*esq) ^ cores.azul_unificado(*dir)),
@@ -218,10 +224,8 @@ def alinha_limite(max_tentativas=3):
 
 def achar_limite() -> tuple[tuple[Color, hsv], tuple[Color, hsv]]: # type: ignore
     achou, extra = andar_ate_idx(ver_nao_pista)
-    if achou:
-        return extra
-    else:
-        return cores.todas(sensor_cor_esq, sensor_cor_dir)
+    if achou: return extra
+    else:     return cores.todas(sensor_cor_esq, sensor_cor_dir)
 
 def _achar_azul() -> bool:
     esq, dir = achar_limite(); alinha_limite() # anda reto até achar o limite
@@ -510,32 +514,20 @@ def _loop_principal_antigo(hub):
 
         seguir_caminho(fim, pos)
 
-def procura_linha(amplitude=15):
-    rodas.drive(30, amplitude)
-
-    rodas.drive(30, -amplitude)
-
-    rodas.drive(30, 0)
-
-
 
 def achar_vermelho(hub):
-    while True:
-        esq, dir = cores.todas(sensor_cor_esq, sensor_cor_dir)
-        
-        if cores.beco_unificado(*esq) and cores.beco_unificado(*dir):
-            rodas.stop()
-            return True  
-
-        elif cores.beco_unificado(*esq):
-            rodas.drive(30,20)
-            dar_re(30)
-        elif cores.beco_unificado(*dir):
-            rodas.drive(30,-20)
-            dar_re(30)
-        else:
-            procura_linha(amplitude=15)  
-
+    esq, dir = achar_limite_area_livre(); alinha_limite()
+    if cores.beco_unificado(*esq) and cores.beco_unificado(*dir):
+        dar_re_meio_bloco()
+        return True
+    elif cores.beco_unificado(*esq):
+        dar_re_meio_bloco()
+        alinha_limite()
+    elif cores.beco_unificado(*dir):
+        dar_re_meio_bloco()
+        alinha_limite()
+    else:
+        choice((virar_direita, virar_esquerda))()
 
 
 def posicionamento_inicial(hub):
@@ -576,11 +568,13 @@ def main(hub):
             cores.repl_calibracao(mapa_hsv)#, lado="esq")
             return
     hub.system.set_stop_button((Button.BLUETOOTH,))
-
+    achou_vermelho = False
+    alinhar()
     blt.resetar_garra(hub)
-    achar_vermelho(hub)
+    while not achou_vermelho:
+        achou_vermelho = achar_vermelho(hub)
     
-    '''caçambas = posicionamento_inicial(hub)
+    caçambas = posicionamento_inicial(hub)
     cor, xy = procura_inicial(hub, 00, caçambas)
     coloca_cubo_na_caçamba(hub, cor, xy, caçambas)
-    procura(hub)'''
+    procura(hub)

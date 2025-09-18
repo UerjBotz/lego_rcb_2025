@@ -157,7 +157,7 @@ def identificar(color, sensor="chao") -> cor: # type: ignore
         return identificar_cor(hsv, mapa)
 
 def pista_unificado(color, hsv):
-    deles = (color == Color.WHITE)
+    deles = (color == Color.WHITE) or (color == Color.GREEN)
     return deles
 
 def parede_unificado(color, hsv):
