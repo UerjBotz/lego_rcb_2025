@@ -15,17 +15,22 @@ import cores
 import gui
 import bluetooth as blt
 
+TAM_QUARTEIRAO = 300
 
-TAM_BLOCO   = 300
-TAM_BLOCO_Y = 294 # na nossa arena os quadrados não são 30x30cm (são 29.4 por quase 30)
+_TAM_BLOCO   = 300
+_TAM_BLOCO_Y = 294 # na nossa arena os quadrados não são 30x30cm (são 29.4 por quase 30)
 
-TAM_FAIXA = 30
-TAM_BLOCO_BECO = TAM_BLOCO_Y - TAM_FAIXA # os blocos dos becos são menores por causa do vermelho
+TAM_FAIXA = 20
 
-PISTA_TODA = TAM_BLOCO*6
+_TAM_FAIXA = 30
+_TAM_BLOCO_BECO = _TAM_BLOCO_Y - _TAM_FAIXA # os blocos dos becos são menores por causa do vermelho
 
-DIST_EIXO_SENSOR = 80 #mm
-DIST_EIXO_SENS_DIST = 45 #mm   #! checar
+PISTA_TODA = TAM_QUARTEIRAO*6
+
+_PISTA_TODA = _TAM_BLOCO*6
+
+_DIST_EIXO_SENSOR = 80 #mm
+_DIST_EIXO_SENS_DIST = 45 #mm   #! checar
 
 
 #! checar stall: jogar exceção
@@ -136,9 +141,9 @@ def dar_re(dist):
 
 def dar_re_meio_bloco(eixo_menor=False):
     if eixo_menor:
-        dar_re(TAM_BLOCO_Y//2 - DIST_EIXO_SENSOR)
+        dar_re(_TAM_BLOCO_Y//2 - _DIST_EIXO_SENSOR)
     else:
-        dar_re(TAM_BLOCO//2   - DIST_EIXO_SENSOR)
+        dar_re(_TAM_BLOCO//2   - _DIST_EIXO_SENSOR)
 
 #! provavelmente mudar andar_ate pra receber uma fn -> bool e retornar só bool, dist (pegar as informações extras na própria função)
 
@@ -175,7 +180,7 @@ def ver_cubo_perto() -> bool:
     cor = blt.ver_cor_cubo(hub)
     return cor != cores.NENHUMA
 
-def andar_ate_idx(*conds_parada: Callable, dist_max=PISTA_TODA) -> tuple[bool, tuple[Any]]: # type: ignore
+def andar_ate_idx(*conds_parada: Callable, dist_max=_PISTA_TODA) -> tuple[bool, tuple[Any]]: # type: ignore
     rodas.reset()
     rodas.straight(dist_max, wait=False)
     while not rodas.done():
@@ -191,7 +196,7 @@ nunca_parar   = (lambda: (False, False))
 ou_manter_res = (lambda res, ext: (res, ext))
 
 def andar_ate_bool(sucesso, neutro=nunca_parar, fracasso=ver_nao_pista,
-                            ou=ou_manter_res, dist_max=PISTA_TODA):
+                            ou=ou_manter_res, dist_max=_PISTA_TODA):
     succ, neut, frac = 1, 2, 3
     while True:
         res, extra = andar_ate_idx(sucesso, neutro, fracasso,
@@ -234,7 +239,7 @@ def _achar_azul() -> bool:
         print(f"_achar_azul: beco")
 
         dar_re_meio_bloco()
-        dar_re(TAM_BLOCO_BECO) 
+        dar_re(_TAM_BLOCO_BECO) 
 
         choice((virar_direita, virar_esquerda))() # divertido
 
@@ -263,7 +268,7 @@ def _achar_azul() -> bool:
 
         if cores.certificar(sensor_cor_esq, sensor_cor_dir, cores.azul_unificado):
             print("_achar_azul: azul mesmo")
-            dar_re(TAM_BLOCO_BECO*3//8)
+            dar_re(_TAM_BLOCO_BECO*3//8)
             return True
         else:
             print("_achar_azul: não azul")
@@ -276,7 +281,7 @@ def alinha_parede(vel, vel_ang, giro_max=45) -> bool:
     alinhado_pista  = lambda esq, dir: cores.pista_unificado(*esq) and cores.pista_unificado(*dir)
 
     with mudar_velocidade(rodas, vel, vel_ang):
-        parou, extra = andar_ate_idx(ver_nao_pista, dist_max=TAM_BLOCO//2)
+        parou, extra = andar_ate_idx(ver_nao_pista, dist_max=_TAM_BLOCO//2)
         if not parou:
             (dist,) = extra
             print(f"alinha_parede: reto branco {dist}")
@@ -334,7 +339,7 @@ def _pegar_passageiro() -> bool:
         res, info = andar_ate_idx(_ver_passageiro_perto,
                                   verificar_cor(cores.beco_unificado),
                                   verificar_cor(cores.parede_unificado),
-                                  dist_max=TAM_BLOCO*4)
+                                  dist_max=_TAM_BLOCO*4)
         if res == 1:
             (dist_esq, dist_dir) = info
             if dist_esq < dist_dir:
@@ -346,7 +351,7 @@ def _pegar_passageiro() -> bool:
 
             blt.abrir_garra(hub)
             with mudar_velocidade(rodas, *vels_padrao):
-                dar_re(DIST_EIXO_SENS_DIST-20) #! desmagificar
+                dar_re(_DIST_EIXO_SENS_DIST-20) #! desmagificar
                 virar()
                 rodas.straight(dist)
                 blt.fechar_garra(hub)
@@ -406,16 +411,16 @@ def _pegar_primeiro_passageiro() -> Color:
 def seguir_caminho(pos, obj): #! lidar com outras coisas
     def interpretar_movimento(mov):
         if   mov == tipo_movimento.FRENTE:
-            rodas.straight(TAM_BLOCO, then=Stop.COAST)
+            rodas.straight(_TAM_BLOCO, then=Stop.COAST)
         elif mov == tipo_movimento.TRAS:
             dar_meia_volta()
-            rodas.straight(TAM_BLOCO, then=Stop.COAST)
+            rodas.straight(_TAM_BLOCO, then=Stop.COAST)
         elif mov == tipo_movimento.ESQUERDA_FRENTE:
             virar_esquerda()
-            rodas.straight(TAM_BLOCO, then=Stop.COAST)
+            rodas.straight(_TAM_BLOCO, then=Stop.COAST)
         elif mov == tipo_movimento.DIREITA_FRENTE:
             virar_direita()
-            rodas.straight(TAM_BLOCO, then=Stop.COAST)
+            rodas.straight(_TAM_BLOCO, then=Stop.COAST)
         elif mov == tipo_movimento.ESQUERDA:
             virar_esquerda()
         elif mov == tipo_movimento.DIREITA:
@@ -494,7 +499,7 @@ def _loop_principal_antigo(hub):
             print(f"{cores.cor(cor)}")
             assert False
 
-        dar_re(TAM_BLOCO//3) #! desmagificar
+        dar_re(_TAM_BLOCO//3) #! desmagificar
         choice((virar_esquerda, virar_direita))()
         achar_limite(); alinha_limite() #! lidar com os casos de cada visto (andar_ate[...])
         #! aqui é pra ser vermelho
@@ -508,9 +513,9 @@ def _loop_principal_antigo(hub):
 
         seguir_caminho(pos, fim)
 
-        rodas.straight(TAM_BLOCO//2)
+        rodas.straight(_TAM_BLOCO//2)
         blt.abrir_garra(hub)
-        dar_re(TAM_BLOCO//2)
+        dar_re(_TAM_BLOCO//2)
 
         seguir_caminho(fim, pos)
 
