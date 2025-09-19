@@ -6,7 +6,7 @@ from pybricks.parameters import Port, Stop, Side, Direction, Button, Color
 from pybricks.tools      import wait, StopWatch
 from pybricks.robotics   import DriveBase
 
-from lib.bipes     import bipe_calibracao, bipe_cabeca, musica_vitoria, musica_derrota
+from lib.bipes     import bipe_calibracao, bipe_cabeca, bipe_separador, musica_vitoria, musica_derrota
 from lib.caminhos  import achar_movimentos, tipo_movimento, posicao_desembarque_adulto
 
 from urandom import choice
@@ -516,23 +516,28 @@ def _loop_principal_antigo(hub):
 
 
 def achar_vermelho(hub):
-    esq, dir = achar_limite_area_livre(); alinha_limite()
+    esq, dir = achar_limite(); alinha_limite()
     if cores.beco_unificado(*esq) and cores.beco_unificado(*dir):
         dar_re_meio_bloco()
         return True
     elif cores.beco_unificado(*esq):
-        dar_re_meio_bloco()
         alinha_limite()
     elif cores.beco_unificado(*dir):
-        dar_re_meio_bloco()
         alinha_limite()
     else:
         choice((virar_direita, virar_esquerda))()
+    return False
+
 
 
 def posicionamento_inicial(hub):
-    achar_vermelho(hub)
-    achar_azul(hub)
+    achou_vermelho = False
+    while not achou_vermelho:
+        achou_vermelho = achar_vermelho(hub)
+    bipe_separador()
+    achou_azul = False
+    while not achou_azul:
+        achou_azul = achar_azul(hub)
     reseta_xy(hub) # vai para o 0,0 do verde
     return descobrir_cor_caçambas(hub)
 
@@ -568,11 +573,9 @@ def main(hub):
             cores.repl_calibracao(mapa_hsv)#, lado="esq")
             return
     hub.system.set_stop_button((Button.BLUETOOTH,))
-    achou_vermelho = False
     alinhar()
     blt.resetar_garra(hub)
-    while not achou_vermelho:
-        achou_vermelho = achar_vermelho(hub)
+    posicionamento_inicial(hub)
     
     caçambas = posicionamento_inicial(hub)
     cor, xy = procura_inicial(hub, 00, caçambas)
