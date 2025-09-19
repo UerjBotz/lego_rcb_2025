@@ -8,26 +8,39 @@ tipo_celula = Enum("tipo_celula", ["RUA",
 tipo_parede = Enum("tipo_parede", ["PAREDE",
                                    "ENTRADA"])
 
+estado_celula = Enum("estado_celula", ["LIVRE",
+                                       "OCUPADA",
+                                       "INCERTO"])
+
 posicao_parede = Enum("posicao_parede", ["N", "L", "S", "O"])
 
 class Rua:
     def __init__(self):
         self.tipo = tipo_celula.RUA
-        self.ocupada = False
+        self.estado = estado_celula.INCERTO
     def __str__(self):
-        return 'rua '
+        return '*'
 
 class Safe:
-    def __init__(self):
+    def __init__(self, a=0):
         self.tipo = tipo_celula.SAFE
+        self.estado = estado_celula.LIVRE if a else estado_celula.OCUPADA
     def __str__(self):
-        return 'safe'
+        return '#'
+
+class Nada:
+    def __init__(self):
+        self.tipo = tipo_celula.NADA
+        self.estado = estado_celula.OCUPADA
+    def __str__(self):
+        return ' '
 
 class Cruz:
     def __init__(self):
         self.tipo = tipo_celula.CRUZ
+        self.estado = estado_celula.LIVRE
     def __str__(self):
-        return 'cruz'
+        return '*'
 
 # celula = Rua | Cruzamento | Safezone | Void
 
@@ -35,24 +48,43 @@ def imprime_matriz(matriz):
     """Imprime a matriz de forma alinhada."""
     largura_maxima = 12
 
+    print(end='  ')
+    for i in range(len(matriz[0])):
+        print((f"{i}     ")[:2], end=' ')
+    print()
+
+    i = 0
     for linha in matriz:
+        print(i, end=' ')
+        i += 1
+
         for celula in linha:
             texto = str(celula)
-            print(texto, end=" ")
+            estado = 'X' if celula.estado == estado_celula.OCUPADA else (
+                     '?' if celula.estado == estado_celula.INCERTO else texto)
+            print(estado*2, end=" ")
         print()
 
 #! ver se lambdar os outros também
 
+def coloca_obstaculo(row, col):
+    if mapa[row][col].tipo == tipo_celula.RUA: #! falhar mais alto
+        mapa[row][col].estado = estado_celula.OCUPADA
+
+def tira_obstaculo(row, col):
+    if mapa[row][col].tipo == tipo_celula.RUA:
+        mapa[row][col].estado = estado_celula.LIVRE
+
 mapa = [
-    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
-    [Safe(),  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua()],
-    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
-    [Safe(),  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua()],
-    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
-    [Safe(),  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua()],
-    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
-    [Safe(),  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua(),  None,  Rua()],
-    [Safe(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz(), Rua(), Cruz()],
+    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
+    [Safe(1), Safe(0),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
+    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
+    [Safe(1), Safe(0),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
+    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
+    [Safe(1), Safe(0),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
+    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
+    [Safe(1), Safe(0),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
+    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()]
 ]
 
 ## implementação do A* (adaptada de <https://www.geeksforgeeks.org/a-search-algorithm-in-python/>)
@@ -76,16 +108,12 @@ def dist_manhatan(posicao_atual, destino):
     return abs(atual_x - dest_x) + abs(atual_y - dest_y)
 
 def dentro_dos_limites(matriz, cell):
-    y, x = cell
-    return 0 <= y < len(matriz) and 0 <= x < len(matriz[0])
+    row, col = cell
+    return 0 <= row < len(matriz) and 0 <= col < len(matriz[0])
 
 def celula_livre(grid, cell):
-    y, x = cell
-    if not grid[y][x]: # Nada lá. Não faz sentido dizer que está livre
-        return False
-    if grid[y][x] == tipo_celula.RUA: # Rua. Pode ter um cubo lá
-        return not grid[y][x].ocupada
-    return True # Safezone ou Cruzamento. Vai estar livre sempre
+    row, col = cell
+    return grid[row][col].estado == estado_celula.LIVRE
 
 #!
 def eh_destino(src, dest): #! acho que dá pra mudar isso pra parar em frente à porta
