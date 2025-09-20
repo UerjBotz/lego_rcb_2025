@@ -21,10 +21,17 @@ class Rua:
     def __str__(self):
         return '*'
 
+class Cruz:
+    def __init__(self):
+        self.tipo = tipo_celula.RUA
+        self.estado = estado_celula.LIVRE
+    def __str__(self):
+        return '*'
+
 class Safe:
-    def __init__(self, a=0):
+    def __init__(self):
         self.tipo = tipo_celula.SAFE
-        self.estado = estado_celula.LIVRE if a else estado_celula.OCUPADA
+        self.estado = estado_celula.LIVRE
     def __str__(self):
         return '#'
 
@@ -34,13 +41,6 @@ class Nada:
         self.estado = estado_celula.OCUPADA
     def __str__(self):
         return ' '
-
-class Cruz:
-    def __init__(self):
-        self.tipo = tipo_celula.CRUZ
-        self.estado = estado_celula.LIVRE
-    def __str__(self):
-        return '*'
 
 # celula = Rua | Cruzamento | Safezone | Void
 
@@ -67,24 +67,26 @@ def imprime_matriz(matriz):
 
 #! ver se lambdar os outros também
 
-def coloca_obstaculo(row, col):
-    if mapa[row][col].tipo == tipo_celula.RUA: #! falhar mais alto
-        mapa[row][col].estado = estado_celula.OCUPADA
+def coloca_obstaculo(x, y):
+    cel = mapa[y][x]
+    if cel.tipo == tipo_celula.RUA: #! falhar mais alto
+        cel.estado = estado_celula.OCUPADA
 
-def tira_obstaculo(row, col):
-    if mapa[row][col].tipo == tipo_celula.RUA:
-        mapa[row][col].estado = estado_celula.LIVRE
+def tira_obstaculo(x, y):
+    cel = mapa[y][x]
+    if cel.tipo == tipo_celula.RUA:
+        cel.estado = estado_celula.LIVRE
 
 mapa = [
-    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
-    [Safe(1), Safe(0),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
-    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
-    [Safe(1), Safe(0),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
-    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
-    [Safe(1), Safe(0),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
-    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
-    [Safe(1), Safe(0),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
-    [Safe(1), Safe(1), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()]
+    [Safe(), Safe(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
+    [Safe(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
+    [Safe(), Safe(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
+    [Safe(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
+    [Safe(), Safe(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
+    [Safe(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
+    [Safe(), Safe(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()],
+    [Safe(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua(), Nada(),  Rua()],
+    [Safe(), Safe(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz(),  Rua(), Cruz()]
 ]
 
 ## implementação do A* (adaptada de <https://www.geeksforgeeks.org/a-search-algorithm-in-python/>)
